@@ -9,9 +9,10 @@ from app.utils.logger import logger
 class OpenAILLM:
     """Wrapper for OpenAI chat completion API."""
 
-    def __init__(self, api_key: str, model: str = "gpt-3.5-turbo"):
+    def __init__(self, api_key: str, model: str = "gpt-3.5-turbo", base_url: str = ""):
         self.api_key = api_key
         self.model = model
+        self.base_url = base_url or None  # None = default OpenAI URL
         self._client = None
 
     @property
@@ -20,8 +21,12 @@ class OpenAILLM:
         if self._client is None:
             try:
                 from openai import OpenAI
-                self._client = OpenAI(api_key=self.api_key)
-                logger.info(f"✅ OpenAI client initialized (model: {self.model})")
+                client_kwargs = {"api_key": self.api_key}
+                if self.base_url:
+                    client_kwargs["base_url"] = self.base_url
+                self._client = OpenAI(**client_kwargs)
+                provider = self.base_url or "api.openai.com"
+                logger.info(f"✅ LLM client initialized (model: {self.model}, provider: {provider})")
             except ImportError:
                 raise ImportError("openai package is required. Install with: pip install openai")
         return self._client

@@ -35,4 +35,5 @@ def get_llm() -> OpenAILLM:
     return OpenAILLM(
         api_key=settings.OPENAI_API_KEY,
         model=settings.OPENAI_MODEL,
+        base_url=settings.OPENAI_BASE_URL,
     )

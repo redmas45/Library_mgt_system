@@ -43,7 +43,7 @@ def create_book(
         copy = BookCopy(
             book_id=book.id,
             copy_number=i,
-            status=CopyStatus.AVAILABLE,
+            status="available",
         )
         db.add(copy)
 
@@ -127,7 +127,7 @@ def get_available_copy(db: Session, book_id: int) -> Optional[BookCopy]:
         db.query(BookCopy)
         .filter(
             BookCopy.book_id == book_id,
-            BookCopy.status == CopyStatus.AVAILABLE,
+            BookCopy.status == "available",
         )
         .first()
     )
@@ -140,7 +140,7 @@ def update_copy_status(
     copy = db.query(BookCopy).filter(BookCopy.id == copy_id).first()
     if not copy:
         return None
-    copy.status = status
+    copy.status = status.value if hasattr(status, 'value') else status
     db.commit()
     db.refresh(copy)
     return copy
@@ -164,7 +164,7 @@ def add_copies_to_book(db: Session, book_id: int, count: int) -> List[BookCopy]:
         copy = BookCopy(
             book_id=book_id,
             copy_number=existing_max + i,
-            status=CopyStatus.AVAILABLE,
+            status="available",
         )
         db.add(copy)
         new_copies.append(copy)

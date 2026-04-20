@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Library AI System</title>
+    <meta name="description" content="AI-Powered Library Management System with RAG capabilities">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/static/styles.css">
+</head>
+<body>
+    <!-- NAVBAR -->
+    <nav class="navbar" id="navbar">
+        <div class="nav-brand">
+            <span class="nav-logo">📚</span>
+            <span class="nav-title">Library AI</span>
+        </div>
+        <div class="nav-links" id="nav-links">
+            <a href="#" onclick="showPage('home')" class="nav-link active" data-page="home">Home</a>
+            <a href="#" onclick="showPage('books')" class="nav-link" data-page="books">Books</a>
+            <a href="#" onclick="showPage('chat')" class="nav-link" data-page="chat">AI Chat</a>
+            <a href="#" onclick="showPage('search')" class="nav-link" data-page="search">Search</a>
+        </div>
+        <div class="nav-actions">
+            <div id="auth-section-logged-out">
+                <button class="btn btn-ghost" onclick="showModal('login')">Sign In</button>
+                <button class="btn btn-primary" onclick="showModal('register')">Sign Up</button>
+            </div>
+            <div id="auth-section-logged-in" style="display:none">
+                <span class="user-badge" id="user-badge">👤 User</span>
+                <button class="btn btn-ghost" onclick="logout()">Logout</button>
+            </div>
+        </div>
+    </nav>
+
+    <!-- HOME PAGE -->
+    <section class="page active" id="page-home">
+        <div class="hero">
+            <div class="hero-content">
+                <div class="hero-badge">✨ AI-Powered Library</div>
+                <h1 class="hero-title">Your Intelligent<br><span class="gradient-text">Digital Library</span></h1>
+                <p class="hero-subtitle">Upload books, ask questions, get summaries, and chat with an AI librarian — all powered by RAG technology.</p>
+                <div class="hero-actions">
+                    <button class="btn btn-primary btn-lg" onclick="showPage('books')">Browse Books</button>
+                    <button class="btn btn-outline btn-lg" onclick="showPage('chat')">Chat with AI</button>
+                </div>
+                <div class="hero-stats">
+                    <div class="stat-item"><span class="stat-number" id="stat-books">0</span><span class="stat-label">Books</span></div>
+                    <div class="stat-item"><span class="stat-number" id="stat-users">0</span><span class="stat-label">Users</span></div>
+                    <div class="stat-item"><span class="stat-number" id="stat-borrows">0</span><span class="stat-label">Borrows</span></div>
+                </div>
+            </div>
+            <div class="hero-visual">
+                <div class="floating-card card-1">📖 Semantic Search</div>
+                <div class="floating-card card-2">🤖 AI Chat</div>
+                <div class="floating-card card-3">📋 Summaries</div>
+                <div class="floating-card card-4">❓ Q&A Engine</div>
+            </div>
+        </div>
+
+        <div class="features-section">
+            <h2 class="section-title">Powerful Features</h2>
+            <div class="features-grid">
+                <div class="feature-card"><div class="feature-icon">📚</div><h3>Book Management</h3><p>Upload PDFs, auto-extract metadata, manage inventory and copies.</p></div>
+                <div class="feature-card"><div class="feature-icon">🔍</div><h3>Semantic Search</h3><p>Find content by meaning, not just keywords. Search across all books.</p></div>
+                <div class="feature-card"><div class="feature-icon">🤖</div><h3>AI Librarian</h3><p>Chat with an intelligent assistant grounded in your library's content.</p></div>
+                <div class="feature-card"><div class="feature-icon">❓</div><h3>Q&A Engine</h3><p>Ask questions about specific books with source citations.</p></div>
+                <div class="feature-card"><div class="feature-icon">📋</div><h3>Summarization</h3><p>Get AI-generated summaries and key ideas from any book.</p></div>
+                <div class="feature-card"><div class="feature-icon">🔄</div><h3>Borrow System</h3><p>Track borrows, returns, due dates and overdue books.</p></div>
+            </div>
+        </div>
+    </section>
+
+    <!-- BOOKS PAGE -->
+    <section class="page" id="page-books">
+        <div class="page-container">
+            <div class="page-header">
+                <h1>📚 Library Collection</h1>
+                <div class="page-header-actions">
+                    <input type="text" class="search-input" id="book-search-input" placeholder="Search books..." oninput="searchBooks()">
+                    <button class="btn btn-primary" onclick="showModal('upload')" id="upload-btn" style="display:none">+ Upload Book</button>
+                </div>
+            </div>
+            <div class="books-grid" id="books-grid">
+                <div class="empty-state">
+                    <div class="empty-icon">📭</div>
+                    <h3>No books yet</h3>
+                    <p>Sign in as admin and upload your first book!</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- CHAT PAGE -->
+    <section class="page" id="page-chat">
+        <div class="chat-container">
+            <div class="chat-sidebar">
+                <h3>🤖 AI Librarian</h3>
+                <p class="chat-desc">Ask anything about the books in your library. The AI will search through all content to give you grounded answers.</p>
+                <div class="chat-options">
+                    <label>Scope to book:</label>
+                    <select id="chat-book-select"><option value="">All books</option></select>
+                </div>
+            </div>
+            <div class="chat-main">
+                <div class="chat-messages" id="chat-messages">
+                    <div class="chat-msg bot"><div class="msg-avatar">🤖</div><div class="msg-content">Hello! I'm your AI Librarian. How can I help you today? Ask me anything about the books in our library.</div></div>
+                </div>
+                <div class="chat-input-area">
+                    <input type="text" id="chat-input" placeholder="Ask the AI Librarian..." onkeydown="if(event.key==='Enter')sendChat()">
+                    <button class="btn btn-primary" onclick="sendChat()">Send</button>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- SEARCH PAGE -->
+    <section class="page" id="page-search">
+        <div class="page-container">
+            <div class="search-hero">
+                <h1>🔍 Semantic Search</h1>
+                <p>Search across all book content by meaning</p>
+                <div class="search-bar-large">
+                    <input type="text" id="semantic-search-input" placeholder="What would you like to find?" onkeydown="if(event.key==='Enter')doSearch()">
+                    <button class="btn btn-primary" onclick="doSearch()">Search</button>
+                </div>
+            </div>
+            <div id="search-results" class="search-results"></div>
+        </div>
+    </section>
+
+    <!-- LOGIN MODAL -->
+    <div class="modal-overlay" id="modal-login" onclick="closeModal(event, 'login')">
+        <div class="modal" onclick="event.stopPropagation()">
+            <button class="modal-close" onclick="hideModal('login')">&times;</button>
+            <h2>Welcome Back</h2>
+            <p class="modal-subtitle">Sign in to your account</p>
+            <div class="form-group"><label>Email</label><input type="email" id="login-email" placeholder="admin@library.ai"></div>
+            <div class="form-group"><label>Password</label><input type="password" id="login-password" placeholder="••••••••"></div>
+            <div id="login-error" class="form-error"></div>
+            <button class="btn btn-primary btn-full" onclick="doLogin()">Sign In</button>
+        </div>
+    </div>
+
+    <!-- REGISTER MODAL -->
+    <div class="modal-overlay" id="modal-register" onclick="closeModal(event, 'register')">
+        <div class="modal" onclick="event.stopPropagation()">
+            <button class="modal-close" onclick="hideModal('register')">&times;</button>
+            <h2>Create Account</h2>
+            <p class="modal-subtitle">Join the library</p>
+            <div class="form-group"><label>Username</label><input type="text" id="reg-username" placeholder="johndoe"></div>
+            <div class="form-group"><label>Email</label><input type="email" id="reg-email" placeholder="you@example.com"></div>
+            <div class="form-group"><label>Full Name</label><input type="text" id="reg-fullname" placeholder="John Doe"></div>
+            <div class="form-group"><label>Password</label><input type="password" id="reg-password" placeholder="••••••••"></div>
+            <div id="reg-error" class="form-error"></div>
+            <button class="btn btn-primary btn-full" onclick="doRegister()">Create Account</button>
+        </div>
+    </div>
+
+    <!-- UPLOAD MODAL -->
+    <div class="modal-overlay" id="modal-upload" onclick="closeModal(event, 'upload')">
+        <div class="modal" onclick="event.stopPropagation()">
+            <button class="modal-close" onclick="hideModal('upload')">&times;</button>
+            <h2>Upload Book</h2>
+            <p class="modal-subtitle">Add a PDF book to the library</p>
+            <div class="form-group"><label>Title</label><input type="text" id="upload-title" placeholder="Book Title"></div>
+            <div class="form-group"><label>Author</label><input type="text" id="upload-author" placeholder="Author Name"></div>
+            <div class="form-group"><label>Description</label><textarea id="upload-desc" placeholder="Brief description..." rows="3"></textarea></div>
+            <div class="form-group"><label>Copies</label><input type="number" id="upload-copies" value="1" min="1"></div>
+            <div class="form-group">
+                <label>PDF File</label>
+                <div class="file-upload" id="file-upload-area">
+                    <input type="file" id="upload-file" accept=".pdf" onchange="onFileSelected()">
+                    <span id="file-label">📄 Click or drag to upload PDF</span>
+                </div>
+            </div>
+            <div id="upload-error" class="form-error"></div>
+            <div id="upload-progress" class="upload-progress" style="display:none"><div class="progress-bar"><div class="progress-fill" id="progress-fill"></div></div><span id="progress-text">Uploading...</span></div>
+            <button class="btn btn-primary btn-full" onclick="doUpload()">Upload Book</button>
+        </div>
+    </div>
+
+    <!-- BOOK DETAIL MODAL -->
+    <div class="modal-overlay" id="modal-bookdetail" onclick="closeModal(event, 'bookdetail')">
+        <div class="modal modal-lg" onclick="event.stopPropagation()">
+            <button class="modal-close" onclick="hideModal('bookdetail')">&times;</button>
+            <div id="book-detail-content"></div>
+        </div>
+    </div>
+
+    <!-- TOAST -->
+    <div class="toast-container" id="toast-container"></div>
+
+    <script src="/static/app.js"></script>
+</body>
+</html>

@@ -32,7 +32,7 @@ class BorrowRecord(Base, TimestampMixin):
         nullable=False,
     )
     returned_at = Column(DateTime, nullable=True)
-    status = Column(SAEnum(BorrowStatus), default=BorrowStatus.ISSUED, nullable=False)
+    status = Column(SAEnum("issued", "returned", "overdue", name="borrowstatus"), default="issued", nullable=False)
 
     # Relationships
     user = relationship("User", back_populates="borrow_records")
@@ -41,7 +41,8 @@ class BorrowRecord(Base, TimestampMixin):
     @property
     def is_overdue(self) -> bool:
         """Check if this borrow is overdue."""
-        if self.status == BorrowStatus.RETURNED:
+        status = self.status.value if hasattr(self.status, 'value') else self.status
+        if status == "returned":
             return False
         return datetime.now(timezone.utc) > self.due_date
 

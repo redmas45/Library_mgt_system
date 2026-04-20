@@ -20,7 +20,7 @@ class BookCopy(Base, TimestampMixin):
     id = Column(Integer, primary_key=True, index=True, autoincrement=True)
     book_id = Column(Integer, ForeignKey("books.id", ondelete="CASCADE"), nullable=False, index=True)
     copy_number = Column(Integer, nullable=False)
-    status = Column(SAEnum(CopyStatus), default=CopyStatus.AVAILABLE, nullable=False)
+    status = Column(SAEnum("available", "issued", "lost", name="copystatus"), default="available", nullable=False)
     condition_notes = Column(String(500), nullable=True)
 
     # Relationships

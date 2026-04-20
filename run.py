@@ -14,10 +14,10 @@ from pathlib import Path
 ROOT_DIR = Path(__file__).resolve().parent
 BACKEND_DIR = ROOT_DIR / "backend"
 DATA_DIR = ROOT_DIR / "data"
-VENV_DIR = BACKEND_DIR / "venv"
 REQUIREMENTS = BACKEND_DIR / "requirements.txt"
 ENV_FILE = BACKEND_DIR / ".env"
 ENV_EXAMPLE = BACKEND_DIR / ".env.example"
+PYTHON = sys.executable  # Use system Python directly
 
 
 # ─── Helpers ─────────────────────────────────────────────
@@ -31,14 +31,8 @@ def pause():
 
 
 def get_python():
-    """Get the Python executable (prefer venv if exists)."""
-    if sys.platform == "win32":
-        venv_python = VENV_DIR / "Scripts" / "python.exe"
-    else:
-        venv_python = VENV_DIR / "bin" / "python"
-    if venv_python.exists():
-        return str(venv_python)
-    return sys.executable
+    """Get the system Python executable."""
+    return PYTHON
 
 
 def print_banner():
@@ -117,27 +111,15 @@ def action_setup_env():
 
 
 def action_install_deps():
-    """Create venv and install requirements."""
+    """Install requirements using system Python."""
     clear_screen()
     print("\n  📦 Installing Dependencies")
     print("  " + "═" * 45)
 
-    python = sys.executable
-
-    # Create venv
-    if not VENV_DIR.exists():
-        print("\n  → Creating virtual environment...")
-        subprocess.run([python, "-m", "venv", str(VENV_DIR)], check=True)
-        print("  ✓ Virtual environment created")
-    else:
-        print("\n  ✓ Virtual environment already exists")
-
-    venv_python = get_python()
-
     # Upgrade pip
-    print("  → Upgrading pip...")
+    print("\n  → Upgrading pip...")
     subprocess.run(
-        [venv_python, "-m", "pip", "install", "--upgrade", "pip", "--quiet"],
+        [PYTHON, "-m", "pip", "install", "--upgrade", "pip", "--quiet"],
         check=True,
     )
 
@@ -145,7 +127,7 @@ def action_install_deps():
     print("  → Installing packages (this may take a few minutes)...")
     print()
     result = subprocess.run(
-        [venv_python, "-m", "pip", "install", "-r", str(REQUIREMENTS)],
+        [PYTHON, "-m", "pip", "install", "-r", str(REQUIREMENTS)],
         cwd=str(BACKEND_DIR),
     )
 
@@ -164,7 +146,7 @@ def action_init_db():
     print("\n  🗄️  Initializing Database")
     print("  " + "═" * 45)
 
-    venv_python = get_python()
+    python = PYTHON
 
     script = """
 import sys, os
@@ -181,7 +163,7 @@ print("  Tables: users, books, book_copies, borrow_records,")
 print("          interactions, reading_stats")
 """.format(backend_dir=str(BACKEND_DIR))
 
-    result = subprocess.run([venv_python, "-c", script], cwd=str(BACKEND_DIR))
+    result = subprocess.run([python, "-c", script], cwd=str(BACKEND_DIR))
 
     if result.returncode != 0:
         print("  ❌ Database initialization failed.")
@@ -196,7 +178,7 @@ def action_seed_admin():
     print("\n  👤 Seeding Admin User")
     print("  " + "═" * 45)
 
-    venv_python = get_python()
+    python = PYTHON
 
     script = """
 import sys, os
@@ -239,7 +221,7 @@ finally:
     db.close()
 """.format(backend_dir=str(BACKEND_DIR))
 
-    result = subprocess.run([venv_python, "-c", script], cwd=str(BACKEND_DIR))
+    result = subprocess.run([python, "-c", script], cwd=str(BACKEND_DIR))
 
     if result.returncode != 0:
         print("  ❌ Failed to seed admin. Make sure DB is initialized (Option 3).")
@@ -257,8 +239,6 @@ def action_start_server():
 
 def _start_server():
     """Internal: start uvicorn server."""
-    venv_python = get_python()
-
     print(f"""
   ┌──────────────────────────────────────────┐
   │  🌐 API:     http://127.0.0.1:8000      │
@@ -273,7 +253,7 @@ def _start_server():
     try:
         subprocess.run(
             [
-                venv_python, "-m", "uvicorn",
+                PYTHON, "-m", "uvicorn",
                 "app.main:app",
                 "--host", "127.0.0.1",
                 "--port", "8000",
@@ -328,10 +308,8 @@ def action_check_status():
     print("  " + "═" * 45)
     print()
 
-    # Check venv
-    venv_exists = VENV_DIR.exists()
-    print_status("Virtual environment", venv_exists,
-                 str(VENV_DIR.relative_to(ROOT_DIR)) if venv_exists else "Not created")
+    # Python info
+    print_status("Python", True, f"{sys.version.split()[0]} ({PYTHON})")
 
     # Check .env
     env_exists = ENV_FILE.exists()
@@ -358,19 +336,17 @@ def action_check_status():
     print_status("Vector store index", index_exists)
 
     # Check key packages
-    venv_python = get_python()
-    if venv_exists:
-        print("\n  📦 Key packages:")
-        for pkg in ["fastapi", "sqlalchemy", "openai", "sentence_transformers", "faiss"]:
-            result = subprocess.run(
-                [venv_python, "-c", f"import {pkg}; print({pkg}.__version__ if hasattr({pkg}, '__version__') else 'installed')"],
-                capture_output=True, text=True,
-            )
-            if result.returncode == 0:
-                ver = result.stdout.strip()
-                print(f"    ✅ {pkg} ({ver})")
-            else:
-                print(f"    ❌ {pkg} — not installed")
+    print("\n  📦 Key packages:")
+    for pkg in ["fastapi", "sqlalchemy", "openai", "sentence_transformers", "faiss"]:
+        result = subprocess.run(
+            [PYTHON, "-c", f"import {pkg}; print({pkg}.__version__ if hasattr({pkg}, '__version__') else 'installed')"],
+            capture_output=True, text=True,
+        )
+        if result.returncode == 0:
+            ver = result.stdout.strip()
+            print(f"    ✅ {pkg} ({ver})")
+        else:
+            print(f"    ❌ {pkg} — not installed")
 
     pause()
 

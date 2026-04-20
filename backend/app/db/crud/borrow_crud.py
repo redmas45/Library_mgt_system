@@ -25,7 +25,7 @@ def create_borrow_record(
         book_copy_id=book_copy_id,
         issued_at=now,
         due_date=now + timedelta(days=due_days),
-        status=BorrowStatus.ISSUED,
+        status="issued",
     )
     db.add(record)
     db.commit()
@@ -44,7 +44,7 @@ def get_user_active_borrows(db: Session, user_id: int) -> List[BorrowRecord]:
         db.query(BorrowRecord)
         .filter(
             BorrowRecord.user_id == user_id,
-            BorrowRecord.status == BorrowStatus.ISSUED,
+            BorrowRecord.status == "issued",
         )
         .all()
     )
@@ -70,11 +70,11 @@ def get_user_borrow_history(
 def return_book(db: Session, record_id: int) -> Optional[BorrowRecord]:
     """Mark a borrow record as returned."""
     record = get_borrow_record_by_id(db, record_id)
-    if not record or record.status == BorrowStatus.RETURNED:
+    if not record or record.status == "returned":
         return None
 
     record.returned_at = datetime.now(timezone.utc)
-    record.status = BorrowStatus.RETURNED
+    record.status = "returned"
     db.commit()
     db.refresh(record)
     return record
@@ -86,7 +86,7 @@ def get_overdue_records(db: Session) -> List[BorrowRecord]:
     return (
         db.query(BorrowRecord)
         .filter(
-            BorrowRecord.status == BorrowStatus.ISSUED,
+            BorrowRecord.status == "issued",
             BorrowRecord.due_date < now,
         )
         .all()
@@ -102,7 +102,7 @@ def get_active_borrow_count(db: Session) -> int:
     """Get count of currently active borrows."""
     return (
         db.query(func.count(BorrowRecord.id))
-        .filter(BorrowRecord.status == BorrowStatus.ISSUED)
+        .filter(BorrowRecord.status == "issued")
         .scalar()
     )
 
@@ -113,7 +113,7 @@ def get_overdue_count(db: Session) -> int:
     return (
         db.query(func.count(BorrowRecord.id))
         .filter(
-            BorrowRecord.status == BorrowStatus.ISSUED,
+            BorrowRecord.status == "issued",
             BorrowRecord.due_date < now,
         )
         .scalar()
@@ -128,7 +128,7 @@ def has_active_borrow(db: Session, user_id: int, book_id: int) -> bool:
         .filter(
             BorrowRecord.user_id == user_id,
             BookCopy.book_id == book_id,
-            BorrowRecord.status == BorrowStatus.ISSUED,
+            BorrowRecord.status == "issued",
         )
         .first()
         is not None

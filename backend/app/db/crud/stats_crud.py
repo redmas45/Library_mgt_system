@@ -127,7 +127,7 @@ def get_top_users(db: Session, limit: int = 10) -> List[dict]:
             func.count(BorrowRecord.id).label("total_borrows"),
             func.sum(
                 func.case(
-                    (BorrowRecord.status == BorrowStatus.ISSUED, 1),
+                    (BorrowRecord.status == "issued", 1),
                     else_=0,
                 )
             ).label("active_borrows"),

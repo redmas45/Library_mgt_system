@@ -29,8 +29,8 @@ class Book(Base, TimestampMixin):
     total_copies = Column(Integer, default=1, nullable=False)
     available_copies = Column(Integer, default=1, nullable=False)
     ingestion_status = Column(
-        SAEnum(IngestionStatus),
-        default=IngestionStatus.PENDING,
+        SAEnum("pending", "processing", "completed", "failed", name="ingestionstatus"),
+        default="pending",
         nullable=False,
     )
     summary_cache = Column(Text, nullable=True)  # Cached AI-generated summary

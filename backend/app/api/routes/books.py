@@ -57,9 +57,8 @@ def get_books(
     per_page: int = Query(20, ge=1, le=100),
     search: Optional[str] = Query(None, max_length=200),
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user),
 ):
-    """Get paginated list of books with optional search."""
+    """Get paginated list of books with optional search. Public endpoint."""
     return list_books(db, page=page, per_page=per_page, search=search)
 
 
@@ -67,9 +66,8 @@ def get_books(
 def get_book(
     book_id: int,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user),
 ):
-    """Get detailed information about a specific book."""
+    """Get detailed information about a specific book. Public endpoint."""
     return get_book_detail(db, book_id)
 
 

@@ -27,6 +27,7 @@ class Settings(BaseSettings):
     # --- OpenAI ---
     OPENAI_API_KEY: str = ""
     OPENAI_MODEL: str = "gpt-3.5-turbo"
+    OPENAI_BASE_URL: str = ""  # Leave empty for default OpenAI, or set for Groq/other providers
 
     # --- Embeddings ---
     EMBEDDING_MODEL: str = "sentence-transformers/all-MiniLM-L6-v2"

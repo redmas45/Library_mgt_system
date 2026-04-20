@@ -88,7 +88,7 @@ def borrow_book(db: Session, user: User, book_id: int) -> BorrowReceiptResponse:
             issued_at=record.issued_at,
             due_date=record.due_date,
             returned_at=record.returned_at,
-            status=record.status.value,
+            status=record.status if isinstance(record.status, str) else record.status.value,
             is_overdue=record.is_overdue,
         ),
     )
@@ -145,7 +145,7 @@ def return_borrowed_book(
             issued_at=record.issued_at,
             due_date=record.due_date,
             returned_at=record.returned_at,
-            status=record.status.value,
+            status=record.status if isinstance(record.status, str) else record.status.value,
             is_overdue=False,
         ),
         was_overdue=was_overdue,
@@ -176,7 +176,7 @@ def get_borrow_history(
                 issued_at=r.issued_at,
                 due_date=r.due_date,
                 returned_at=r.returned_at,
-                status=r.status.value,
+                status=r.status if isinstance(r.status, str) else r.status.value,
                 is_overdue=r.is_overdue,
             )
         )
