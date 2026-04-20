@@ -50,3 +50,16 @@ class BorrowHistoryResponse(BaseModel):
     total: int
     active_borrows: int
     overdue_borrows: int
+
+
+class AdminBorrowRecordResponse(BorrowRecordResponse):
+    username: Optional[str] = None
+    user_email: Optional[str] = None
+    copy_number: Optional[int] = None
+
+
+class AdminBorrowHistoryResponse(BaseModel):
+    records: List[AdminBorrowRecordResponse]
+    total: int
+    active_borrows: int
+    overdue_borrows: int

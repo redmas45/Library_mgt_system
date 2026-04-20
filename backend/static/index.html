@@ -21,6 +21,7 @@
             <a href="#" onclick="showPage('books')" class="nav-link" data-page="books">Books</a>
             <a href="#" onclick="showPage('chat')" class="nav-link" data-page="chat">AI Chat</a>
             <a href="#" onclick="showPage('search')" class="nav-link" data-page="search">Search</a>
+            <a href="#" onclick="showPage('admin')" class="nav-link" data-page="admin" id="nav-admin-link" style="display:none">Admin</a>
         </div>
         <div class="nav-actions">
             <div id="auth-section-logged-out">
@@ -127,6 +128,50 @@
                 </div>
             </div>
             <div id="search-results" class="search-results"></div>
+        </div>
+    </section>
+
+    <!-- ADMIN PAGE -->
+    <section class="page" id="page-admin">
+        <div class="page-container">
+            <div class="page-header">
+                <h1>Admin Dashboard</h1>
+                <div class="page-header-actions">
+                    <button class="btn btn-outline" onclick="loadAdminDashboard()">Refresh</button>
+                </div>
+            </div>
+
+            <div class="admin-kpis" id="admin-kpis">
+                <div class="admin-kpi-card"><h4>Total Books</h4><p id="admin-total-books">-</p></div>
+                <div class="admin-kpi-card"><h4>Total Users</h4><p id="admin-total-users">-</p></div>
+                <div class="admin-kpi-card"><h4>Total Borrows</h4><p id="admin-total-borrows">-</p></div>
+                <div class="admin-kpi-card"><h4>Active Borrows</h4><p id="admin-active-borrows">-</p></div>
+                <div class="admin-kpi-card"><h4>Overdue Borrows</h4><p id="admin-overdue-borrows">-</p></div>
+                <div class="admin-kpi-card"><h4>Pending Ingestion</h4><p id="admin-books-pending">-</p></div>
+            </div>
+
+            <div class="admin-panel">
+                <h3>Who Borrowed Which Book</h3>
+                <p class="admin-note">Most recent borrow records across all users.</p>
+                <div class="admin-table-wrap">
+                    <table class="admin-table">
+                        <thead>
+                            <tr>
+                                <th>User</th>
+                                <th>Email</th>
+                                <th>Book</th>
+                                <th>Copy</th>
+                                <th>Issued</th>
+                                <th>Due</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody id="admin-borrow-rows">
+                            <tr><td colspan="7">Sign in as admin to view records.</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
         </div>
     </section>
 

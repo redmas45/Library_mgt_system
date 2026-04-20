@@ -11,6 +11,10 @@ from app.db.crud.borrow_crud import (
     get_borrow_record_by_id,
     get_user_active_borrows,
     get_user_borrow_history,
+    get_all_borrow_history,
+    get_total_borrows,
+    get_active_borrow_count,
+    get_overdue_count,
     return_book as crud_return_book,
     has_active_borrow,
 )
@@ -25,9 +29,11 @@ from app.db.models.book_copy import CopyStatus
 from app.db.models.user import User
 from app.db.schemas.borrow_schemas import (
     BorrowRecordResponse,
+    AdminBorrowRecordResponse,
     BorrowReceiptResponse,
     ReturnReceiptResponse,
     BorrowHistoryResponse,
+    AdminBorrowHistoryResponse,
 )
 from app.exceptions.book_exceptions import BookNotFoundError, NoCopiesAvailableError
 from app.exceptions.borrow_exceptions import (
@@ -186,4 +192,50 @@ def get_borrow_history(
         total=len(records),
         active_borrows=len(active),
         overdue_borrows=len(overdue),
+    )
+
+
+def get_admin_borrow_history(
+    db: Session, skip: int = 0, limit: int = 100
+) -> AdminBorrowHistoryResponse:
+    """Get borrow history across all users (admin only)."""
+    records = get_all_borrow_history(db, skip=skip, limit=limit)
+
+    record_responses = []
+    for r in records:
+        book_title = "Unknown"
+        copy_number = None
+        if r.book_copy:
+            copy_number = r.book_copy.copy_number
+            if r.book_copy.book:
+                book_title = r.book_copy.book.title
+
+        username = None
+        user_email = None
+        if r.user:
+            username = r.user.username
+            user_email = r.user.email
+
+        record_responses.append(
+            AdminBorrowRecordResponse(
+                id=r.id,
+                user_id=r.user_id,
+                book_copy_id=r.book_copy_id,
+                book_title=book_title,
+                issued_at=r.issued_at,
+                due_date=r.due_date,
+                returned_at=r.returned_at,
+                status=r.status if isinstance(r.status, str) else r.status.value,
+                is_overdue=r.is_overdue,
+                username=username,
+                user_email=user_email,
+                copy_number=copy_number,
+            )
+        )
+
+    return AdminBorrowHistoryResponse(
+        records=record_responses,
+        total=get_total_borrows(db),
+        active_borrows=get_active_borrow_count(db),
+        overdue_borrows=get_overdue_count(db),
     )

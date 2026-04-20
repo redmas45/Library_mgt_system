@@ -52,6 +52,7 @@ function showPage(name) {
     const link = document.querySelector(`.nav-link[data-page="${name}"]`);
     if (link) link.classList.add('active');
     if (name === 'books') loadBooks();
+    if (name === 'admin') loadAdminDashboard();
 }
 
 // ─── Auth ───
@@ -112,14 +113,17 @@ async function doRegister() {
 }
 
 function logout() {
+    const onAdminPage = document.getElementById('page-admin')?.classList.contains('active');
     token = null;
     currentUser = null;
     localStorage.removeItem('lib_token');
     updateAuthUI();
+    if (onAdminPage) showPage('home');
     toast('Signed out', 'info');
 }
 
 function updateAuthUI() {
+    const adminLink = document.getElementById('nav-admin-link');
     if (token && currentUser) {
         document.getElementById('auth-section-logged-in').style.display = 'flex';
         document.getElementById('auth-section-logged-out').style.display = 'none';
@@ -127,10 +131,12 @@ function updateAuthUI() {
         // Show upload for admin (case-insensitive)
         const role = (currentUser.role || '').toLowerCase();
         document.getElementById('upload-btn').style.display = (role === 'admin') ? 'inline-flex' : 'none';
+        if (adminLink) adminLink.style.display = (role === 'admin') ? 'inline-flex' : 'none';
     } else {
         document.getElementById('auth-section-logged-in').style.display = 'none';
         document.getElementById('auth-section-logged-out').style.display = 'flex';
         document.getElementById('upload-btn').style.display = 'none';
+        if (adminLink) adminLink.style.display = 'none';
     }
 }
 
@@ -155,6 +161,62 @@ async function loadProfile(silent = false) {
 }
 
 // ─── Books ───
+async function loadAdminDashboard() {
+    const role = (currentUser?.role || '').toLowerCase();
+    const tbody = document.getElementById('admin-borrow-rows');
+
+    if (!token || role !== 'admin') {
+        if (tbody) tbody.innerHTML = '<tr><td colspan="7">Admin access required.</td></tr>';
+        return;
+    }
+
+    try {
+        const [dashboard, borrowHistory] = await Promise.all([
+            apiGet('/dashboard/'),
+            apiGet('/borrow/admin/history?limit=100'),
+        ]);
+
+        const overview = dashboard.overview || {};
+        document.getElementById('admin-total-books').textContent = overview.total_books ?? 0;
+        document.getElementById('admin-total-users').textContent = overview.total_users ?? 0;
+        document.getElementById('admin-total-borrows').textContent = overview.total_borrows ?? 0;
+        document.getElementById('admin-active-borrows').textContent = overview.active_borrows ?? 0;
+        document.getElementById('admin-overdue-borrows').textContent = overview.overdue_borrows ?? 0;
+        document.getElementById('admin-books-pending').textContent = overview.books_pending ?? 0;
+
+        document.getElementById('stat-users').textContent = overview.total_users ?? 0;
+        document.getElementById('stat-borrows').textContent = overview.total_borrows ?? 0;
+
+        const rows = borrowHistory.records || [];
+        if (!rows.length) {
+            if (tbody) tbody.innerHTML = '<tr><td colspan="7">No borrow records found.</td></tr>';
+            return;
+        }
+
+        if (tbody) {
+            tbody.innerHTML = rows.map((record) => {
+                const statusRaw = (record.status || 'unknown').toLowerCase();
+                const statusClass = `admin-status admin-status-${statusRaw}`;
+                return `
+                    <tr>
+                        <td>${esc(record.username || `User #${record.user_id}`)}</td>
+                        <td>${esc(record.user_email || '-')}</td>
+                        <td>${esc(record.book_title || 'Unknown')}</td>
+                        <td>${record.copy_number ?? '-'}</td>
+                        <td>${formatDateTime(record.issued_at)}</td>
+                        <td>${formatDateTime(record.due_date)}</td>
+                        <td><span class="${statusClass}">${esc(statusRaw)}</span></td>
+                    </tr>
+                `;
+            }).join('');
+        }
+    } catch (e) {
+        if (tbody) {
+            tbody.innerHTML = `<tr><td colspan="7" style="color:var(--danger)">${esc(e.detail || 'Failed to load admin dashboard')}</td></tr>`;
+        }
+    }
+}
+
 async function loadBooks() {
     const grid = document.getElementById('books-grid');
     const search = document.getElementById('book-search-input')?.value || '';
@@ -417,4 +479,11 @@ function esc(str) {
     const div = document.createElement('div');
     div.textContent = str;
     return div.innerHTML;
+}
+
+function formatDateTime(value) {
+    if (!value) return '-';
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return '-';
+    return date.toLocaleString();
 }

@@ -7,6 +7,7 @@ from sqlalchemy.orm import Session
 from typing import Optional
 
 from app.core.embeddings.vector_store import VectorStore
+from app.db.crud.book_crud import get_books
 from app.db.crud.stats_crud import increment_search_count, create_interaction
 from app.db.models.user import User
 from app.db.schemas.ai_schemas import SearchRequest, SearchResponse, SearchResult
@@ -46,6 +47,31 @@ class SearchService:
             top_k=top_k,
             book_id=book_id,
         )
+
+        # Fallback: if semantic index has no hits, return title/author matches.
+        if not raw_results:
+            fallback_books = get_books(db, skip=0, limit=top_k, search=query)
+            for book in fallback_books:
+                ingestion_status = (
+                    book.ingestion_status.value
+                    if hasattr(book.ingestion_status, "value")
+                    else str(book.ingestion_status)
+                )
+                snippet = (book.description or "").strip()
+                if snippet:
+                    snippet = snippet[:240] + ("..." if len(snippet) > 240 else "")
+                else:
+                    snippet = f"Title or author match. Ingestion status: {ingestion_status}."
+
+                raw_results.append(
+                    {
+                        "book_id": book.id,
+                        "book_title": book.title,
+                        "chunk_text": snippet,
+                        "page_number": None,
+                        "relevance_score": 0.35,
+                    }
+                )
 
         # Update search stats for each book found
         seen_books = set()

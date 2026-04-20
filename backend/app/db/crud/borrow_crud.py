@@ -67,6 +67,21 @@ def get_user_borrow_history(
     )
 
 
+def get_all_borrow_history(
+    db: Session,
+    skip: int = 0,
+    limit: int = 100,
+) -> List[BorrowRecord]:
+    """Get paginated borrow history for all users (admin view)."""
+    return (
+        db.query(BorrowRecord)
+        .order_by(BorrowRecord.issued_at.desc())
+        .offset(skip)
+        .limit(limit)
+        .all()
+    )
+
+
 def return_book(db: Session, record_id: int) -> Optional[BorrowRecord]:
     """Mark a borrow record as returned."""
     record = get_borrow_record_by_id(db, record_id)
