@@ -166,7 +166,7 @@ async function loadAdminDashboard() {
     const tbody = document.getElementById('admin-borrow-rows');
 
     if (!token || role !== 'admin') {
-        if (tbody) tbody.innerHTML = '<tr><td colspan="7">Admin access required.</td></tr>';
+        if (tbody) tbody.innerHTML = '<tr><td colspan="8">Admin access required.</td></tr>';
         return;
     }
 
@@ -194,7 +194,7 @@ async function loadAdminDashboard() {
 
         const rows = borrowRes.value.records || [];
         if (!rows.length) {
-            if (tbody) tbody.innerHTML = '<tr><td colspan="7">No borrow records found.</td></tr>';
+            if (tbody) tbody.innerHTML = '<tr><td colspan="8">No borrow records found.</td></tr>';
             return;
         }
 
@@ -202,6 +202,7 @@ async function loadAdminDashboard() {
             tbody.innerHTML = rows.map((record) => {
                 const statusRaw = (record.status || 'unknown').toLowerCase();
                 const statusClass = `admin-status admin-status-${statusRaw}`;
+                const returnBtn = statusRaw === 'issued' ? `<button class="btn btn-sm btn-outline" onclick="adminReturnBook(${record.id})">Return</button>` : '-';
                 return `
                     <tr>
                         <td>${esc(record.username || `User #${record.user_id}`)}</td>
@@ -211,14 +212,26 @@ async function loadAdminDashboard() {
                         <td>${formatDateTime(record.issued_at)}</td>
                         <td>${formatDateTime(record.due_date)}</td>
                         <td><span class="${statusClass}">${esc(statusRaw)}</span></td>
+                        <td>${returnBtn}</td>
                     </tr>
                 `;
             }).join('');
         }
     } catch (e) {
         if (tbody) {
-            tbody.innerHTML = `<tr><td colspan="7" style="color:var(--danger)">${esc(e.detail || 'Failed to load admin dashboard')}</td></tr>`;
+            tbody.innerHTML = `<tr><td colspan="8" style="color:var(--danger)">${esc(e.detail || 'Failed to load admin dashboard')}</td></tr>`;
         }
+    }
+}
+
+async function adminReturnBook(borrowId) {
+    if (!confirm('Are you sure you want to forcefully return this book?')) return;
+    try {
+        await apiPost('/borrow/return', { borrow_id: borrowId });
+        toast('Book returned successfully', 'success');
+        loadAdminDashboard();
+    } catch (e) {
+        toast(e.detail || 'Failed to return book', 'error');
     }
 }
 

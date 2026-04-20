@@ -26,7 +26,7 @@ from app.db.crud.book_crud import (
 )
 from app.db.crud.stats_crud import increment_borrow_count
 from app.db.models.book_copy import CopyStatus
-from app.db.models.user import User
+from app.db.models.user import User, UserRole
 from app.db.schemas.borrow_schemas import (
     BorrowRecordResponse,
     AdminBorrowRecordResponse,
@@ -109,8 +109,8 @@ def return_borrowed_book(
     if not record:
         raise BorrowRecordNotFoundError(borrow_id)
 
-    # Verify the user owns this borrow
-    if record.user_id != user.id:
+    # Verify the user owns this borrow (or is an admin)
+    if record.user_id != user.id and user.role != UserRole.ADMIN:
         raise UnauthorizedReturnError()
 
     # Check if already returned
