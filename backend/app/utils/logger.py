@@ -24,6 +24,7 @@ logger.add(
     compression="zip",
     format="{time:YYYY-MM-DD HH:mm:ss} | {level: <8} | {name}:{function}:{line} — {message}",
     level="INFO",
+    encoding="utf-8",
 )
 
 __all__ = ["logger"]
