@@ -205,3 +205,27 @@ cython_debug/
 marimo/_static/
 marimo/_lsp/
 __marimo__/
+
+# ==========================================
+# Library AI System — Project Specific
+# ==========================================
+
+# Environment files with secrets
+backend/.env
+
+# SQLite database
+data/*.db
+data/*.db-journal
+
+# Uploaded books (large files)
+data/books/*.pdf
+
+# FAISS vector indexes
+data/embeddings/*.index
+data/embeddings/*_metadata.json
+
+# Processed text cache
+data/processed/
+
+# Application logs
+logs/

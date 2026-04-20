@@ -1,0 +1,49 @@
+"""
+BorrowRecord model — tracks book borrow/return transactions.
+"""
+
+from datetime import datetime, timezone, timedelta
+from sqlalchemy import Column, Integer, ForeignKey, DateTime, Enum as SAEnum
+from sqlalchemy.orm import relationship
+from app.db.models.base import Base, TimestampMixin
+import enum
+
+
+class BorrowStatus(str, enum.Enum):
+    ISSUED = "issued"
+    RETURNED = "returned"
+    OVERDUE = "overdue"
+
+
+class BorrowRecord(Base, TimestampMixin):
+    __tablename__ = "borrow_records"
+
+    id = Column(Integer, primary_key=True, index=True, autoincrement=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False, index=True)
+    book_copy_id = Column(Integer, ForeignKey("book_copies.id"), nullable=False, index=True)
+    issued_at = Column(
+        DateTime,
+        default=lambda: datetime.now(timezone.utc),
+        nullable=False,
+    )
+    due_date = Column(
+        DateTime,
+        default=lambda: datetime.now(timezone.utc) + timedelta(days=14),
+        nullable=False,
+    )
+    returned_at = Column(DateTime, nullable=True)
+    status = Column(SAEnum(BorrowStatus), default=BorrowStatus.ISSUED, nullable=False)
+
+    # Relationships
+    user = relationship("User", back_populates="borrow_records")
+    book_copy = relationship("BookCopy", back_populates="borrow_records")
+
+    @property
+    def is_overdue(self) -> bool:
+        """Check if this borrow is overdue."""
+        if self.status == BorrowStatus.RETURNED:
+            return False
+        return datetime.now(timezone.utc) > self.due_date
+
+    def __repr__(self):
+        return f"<BorrowRecord(id={self.id}, user_id={self.user_id}, status='{self.status}')>"

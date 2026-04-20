@@ -1,0 +1,41 @@
+"""
+Indexer — embeds chunks and stores them in the vector store.
+"""
+
+from typing import List, Dict
+from app.core.embeddings.vector_store import VectorStore
+from app.utils.logger import logger
+
+
+def index_chunks(
+    vector_store: VectorStore,
+    chunks: List[Dict],
+    book_id: int,
+    book_title: str,
+) -> int:
+    """
+    Embed and index text chunks into the vector store.
+
+    Args:
+        vector_store: The FAISS vector store instance
+        chunks: List of text chunks from the chunker
+        book_id: Book ID for metadata association
+        book_title: Book title for metadata
+
+    Returns:
+        Number of chunks indexed
+    """
+    if not chunks:
+        logger.warning(f"⚠️ No chunks to index for book '{book_title}' (ID: {book_id})")
+        return 0
+
+    # Remove any existing vectors for this book (re-ingestion case)
+    existing = vector_store.get_book_chunk_count(book_id)
+    if existing > 0:
+        logger.info(f"🔄 Re-indexing: removing {existing} existing chunks for book_id={book_id}")
+        vector_store.delete_book_vectors(book_id)
+
+    # Add new chunks
+    count = vector_store.add_chunks(chunks, book_id, book_title)
+    logger.info(f"✅ Indexed {count} chunks for '{book_title}' (ID: {book_id})")
+    return count
