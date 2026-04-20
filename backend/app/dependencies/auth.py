@@ -25,6 +25,9 @@ def create_access_token(
 ) -> str:
     """Create a JWT access token."""
     to_encode = data.copy()
+    # JWT subject claim should be a string.
+    if to_encode.get("sub") is not None:
+        to_encode["sub"] = str(to_encode["sub"])
     expire = datetime.now(timezone.utc) + (
         expires_delta or timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
     )
@@ -38,14 +41,23 @@ def verify_token(token: str) -> TokenData:
         payload = jwt.decode(
             token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM]
         )
-        user_id: int = payload.get("sub")
+        raw_user_id = payload.get("sub")
         email: str = payload.get("email")
         role: str = payload.get("role")
-        if user_id is None:
+        if raw_user_id is None:
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 detail="Invalid token: missing user ID",
             )
+
+        try:
+            user_id = int(raw_user_id)
+        except (TypeError, ValueError):
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Invalid token: malformed user ID",
+            )
+
         return TokenData(user_id=user_id, email=email, role=role)
     except JWTError:
         raise HTTPException(

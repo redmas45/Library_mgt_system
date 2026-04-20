@@ -6,8 +6,12 @@ let currentUser = null;
 let chatSessionId = null;
 
 // ─── Init ───
-document.addEventListener('DOMContentLoaded', () => {
-    if (token) loadProfile();
+document.addEventListener('DOMContentLoaded', async () => {
+    if (token) {
+        await loadProfile(true);
+    } else {
+        updateAuthUI();
+    }
     loadBooks();
 });
 
@@ -66,10 +70,17 @@ async function doLogin() {
         const data = await apiPost('/auth/login', { email, password });
         token = data.access_token;
         localStorage.setItem('lib_token', token);
-        hideModal('login');
 
-        // Try to load profile, but don't fail if it errors
+        // Confirm token works before declaring success.
         const profileOk = await loadProfile(true);
+        if (!profileOk) {
+            errEl.textContent = 'Sign in could not be completed. Please try again.';
+            toast('Sign in failed. Please try again.', 'error');
+            return;
+        }
+
+        hideModal('login');
+        document.getElementById('login-password').value = '';
         toast('Signed in successfully!', 'success');
         loadBooks();
     } catch (e) {
