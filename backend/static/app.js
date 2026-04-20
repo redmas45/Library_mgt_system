@@ -256,6 +256,7 @@ async function loadBooks() {
                     <div class="book-meta">
                         <span class="book-copies">${b.available_copies ?? '?'}/${b.total_copies ?? '?'} copies</span>
                         <div class="book-actions">
+                            <button class="btn btn-sm btn-outline" onclick="event.stopPropagation();openPdfReader(${b.id})">Read</button>
                             <button class="btn btn-sm btn-primary" onclick="event.stopPropagation();borrowBook(${b.id})">Borrow</button>
                         </div>
                     </div>
@@ -299,6 +300,7 @@ async function showBookDetail(id) {
                         ${book.isbn ? ' · ISBN: ' + book.isbn : ''}
                     </p>
                     <div class="detail-actions">
+                        <button class="btn btn-outline" onclick="openPdfReader(${book.id})">👀 Read</button>
                         <button class="btn btn-primary" onclick="borrowBook(${book.id})">📖 Borrow</button>
                         <button class="btn btn-outline" onclick="getSummary(${book.id})">📋 Summary</button>
                     </div>
@@ -485,7 +487,7 @@ async function doSearch() {
             return;
         }
         container.innerHTML = results.map(r => `
-            <div class="search-result-card">
+            <div class="search-result-card" style="cursor: pointer;" onclick="openPdfReader(${r.book_id}, ${r.page_number || 1})">
                 <h4>📖 ${esc(r.book_title)} ${r.page_number ? '— Page ' + r.page_number : ''}</h4>
                 <p>${esc(r.chunk_text)}</p>
                 <div class="result-meta">Relevance: ${(r.relevance_score * 100).toFixed(1)}%</div>
@@ -498,6 +500,18 @@ async function doSearch() {
 
 // ─── Modals ───
 function showModal(name) { document.getElementById('modal-' + name).classList.add('active'); }
+
+// ─── PDF Reader ───
+function openPdfReader(bookId, pageNumber = null) {
+    const frame = document.getElementById('pdf-frame');
+    document.getElementById('pdf-title').textContent = `Reading Book`;
+    let url = `/api/books/${bookId}/pdf`;
+    if (pageNumber) {
+        url += `#page=${pageNumber}`;
+    }
+    frame.src = url;
+    showModal('pdf');
+}
 function hideModal(name) { document.getElementById('modal-' + name).classList.remove('active'); }
 function closeModal(event, name) { if (event.target === event.currentTarget) hideModal(name); }
 

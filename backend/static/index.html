@@ -235,6 +235,17 @@
         </div>
     </div>
 
+    <!-- PDF VIEWER MODAL -->
+    <div class="modal-overlay" id="modal-pdf" onclick="closeModal(event, 'pdf')">
+        <div class="modal" onclick="event.stopPropagation()" style="width: 95%; max-width: 1200px; height: 90vh; display: flex; flex-direction: column;">
+            <button class="modal-close" onclick="hideModal('pdf')">&times;</button>
+            <h2 id="pdf-title" style="margin-bottom: 10px;">Reading Book</h2>
+            <div style="flex-grow: 1; position: relative;">
+                <iframe id="pdf-frame" src="" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; border: none; border-radius: 8px;"></iframe>
+            </div>
+        </div>
+    </div>
+
     <!-- TOAST -->
     <div class="toast-container" id="toast-container"></div>
 

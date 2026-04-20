@@ -71,6 +71,29 @@ def get_book(
     return get_book_detail(db, book_id)
 
 
+@router.get("/{book_id}/pdf")
+def get_book_pdf(
+    book_id: int,
+    db: Session = Depends(get_db),
+):
+    """Serve the PDF file for reading."""
+    from fastapi.responses import FileResponse
+    from fastapi import HTTPException
+    import os
+    from app.db.crud.book_crud import get_book_by_id
+    
+    book = get_book_by_id(db, book_id)
+    if not book or not getattr(book, 'file_path', None) or not os.path.exists(book.file_path):
+        raise HTTPException(status_code=404, detail="PDF not found on server")
+        
+    return FileResponse(
+        path=book.file_path,
+        media_type="application/pdf",
+        filename=book.file_name,
+        content_disposition_type="inline"  # Allows browser to view it instead of forcing download
+    )
+
+
 @router.put("/{book_id}", response_model=BookResponse)
 def update_book_endpoint(
     book_id: int,

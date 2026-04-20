@@ -37,15 +37,29 @@ class VectorStore:
                 self._index = faiss.read_index(index_path)
                 with open(self._metadata_path, "r", encoding="utf-8") as f:
                     self._metadata = json.load(f)
+                
+                # Migrate L2 to IP (Cosine Similarity) if needed
+                if self._index.metric_type == faiss.METRIC_L2:
+                    logger.info("🔄 Migrating FAISS index from L2 to Cosine Similarity (IP)...")
+                    if self._index.ntotal > 0:
+                        vectors = np.array([self._index.reconstruct(i) for i in range(self._index.ntotal)], dtype=np.float32)
+                        faiss.normalize_L2(vectors)
+                        self._index = faiss.IndexFlatIP(self.dimension)
+                        self._index.add(vectors)
+                    else:
+                        self._index = faiss.IndexFlatIP(self.dimension)
+                    self._save()
+                    logger.info("✅ Migration complete!")
+
                 logger.info(
                     f"📂 Loaded vector store: {self._index.ntotal} vectors"
                 )
             except Exception as e:
                 logger.warning(f"⚠️ Failed to load index, creating new: {e}")
-                self._index = faiss.IndexFlatL2(self.dimension)
+                self._index = faiss.IndexFlatIP(self.dimension)
                 self._metadata = []
         else:
-            self._index = faiss.IndexFlatL2(self.dimension)
+            self._index = faiss.IndexFlatIP(self.dimension)
             self._metadata = []
             logger.info(f"🆕 Created new vector store (dim={self.dimension})")
 
@@ -74,6 +88,10 @@ class VectorStore:
 
         # Ensure embeddings are float32
         embeddings = np.array(embeddings, dtype=np.float32)
+        
+        # Normalize for Cosine Similarity
+        import faiss
+        faiss.normalize_L2(embeddings)
 
         # Add to FAISS index
         self._index.add(embeddings)
@@ -114,8 +132,10 @@ class VectorStore:
         if self._index.ntotal == 0:
             return []
 
+        import faiss
         query_embedding = self.embedder.embed_text(query)
         query_embedding = np.array([query_embedding], dtype=np.float32)
+        faiss.normalize_L2(query_embedding)
 
         # Search more than needed if filtering by book_id
         search_k = top_k * 5 if book_id else top_k
@@ -135,8 +155,9 @@ class VectorStore:
             if book_id and meta["book_id"] != book_id:
                 continue
 
-            # Convert L2 distance to similarity score (lower distance = higher similarity)
-            score = 1.0 / (1.0 + float(dist))
+            # Inner Product with normalized vectors ranges from -1 to 1.
+            # Clip to [0, 1] for relevance score mapping.
+            score = max(0.0, min(1.0, float(dist)))
 
             results.append({
                 "book_id": meta["book_id"],
@@ -179,11 +200,11 @@ class VectorStore:
             kept_metadata = [self._metadata[i] for i in keep_indices]
 
             # Rebuild index
-            self._index = faiss.IndexFlatL2(self.dimension)
+            self._index = faiss.IndexFlatIP(self.dimension)
             self._index.add(kept_vectors)
             self._metadata = kept_metadata
         else:
-            self._index = faiss.IndexFlatL2(self.dimension)
+            self._index = faiss.IndexFlatIP(self.dimension)
             self._metadata = []
 
         self._save()
