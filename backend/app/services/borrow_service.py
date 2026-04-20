@@ -122,7 +122,10 @@ def return_borrowed_book(
     was_overdue = record.is_overdue
     overdue_days = 0
     if was_overdue:
-        overdue_days = (now - record.due_date).days
+        due_date = record.due_date
+        if due_date and due_date.tzinfo is None:
+            due_date = due_date.replace(tzinfo=timezone.utc)
+        overdue_days = max(0, (now - due_date).days) if due_date else 0
 
     # Mark as returned
     crud_return_book(db, borrow_id)

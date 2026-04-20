@@ -171,23 +171,28 @@ async function loadAdminDashboard() {
     }
 
     try {
-        const [dashboard, borrowHistory] = await Promise.all([
+        const [dashboardRes, borrowRes] = await Promise.allSettled([
             apiGet('/dashboard/'),
             apiGet('/borrow/admin/history?limit=100'),
         ]);
 
-        const overview = dashboard.overview || {};
-        document.getElementById('admin-total-books').textContent = overview.total_books ?? 0;
-        document.getElementById('admin-total-users').textContent = overview.total_users ?? 0;
-        document.getElementById('admin-total-borrows').textContent = overview.total_borrows ?? 0;
-        document.getElementById('admin-active-borrows').textContent = overview.active_borrows ?? 0;
-        document.getElementById('admin-overdue-borrows').textContent = overview.overdue_borrows ?? 0;
-        document.getElementById('admin-books-pending').textContent = overview.books_pending ?? 0;
+        if (dashboardRes.status === 'fulfilled') {
+            const overview = dashboardRes.value.overview || {};
+            document.getElementById('admin-total-books').textContent = overview.total_books ?? 0;
+            document.getElementById('admin-total-users').textContent = overview.total_users ?? 0;
+            document.getElementById('admin-total-borrows').textContent = overview.total_borrows ?? 0;
+            document.getElementById('admin-active-borrows').textContent = overview.active_borrows ?? 0;
+            document.getElementById('admin-overdue-borrows').textContent = overview.overdue_borrows ?? 0;
+            document.getElementById('admin-books-pending').textContent = overview.books_pending ?? 0;
+            document.getElementById('stat-users').textContent = overview.total_users ?? 0;
+            document.getElementById('stat-borrows').textContent = overview.total_borrows ?? 0;
+        }
 
-        document.getElementById('stat-users').textContent = overview.total_users ?? 0;
-        document.getElementById('stat-borrows').textContent = overview.total_borrows ?? 0;
+        if (borrowRes.status !== 'fulfilled') {
+            throw borrowRes.reason || new Error('Failed to load borrow records');
+        }
 
-        const rows = borrowHistory.records || [];
+        const rows = borrowRes.value.records || [];
         if (!rows.length) {
             if (tbody) tbody.innerHTML = '<tr><td colspan="7">No borrow records found.</td></tr>';
             return;
@@ -245,9 +250,13 @@ async function loadBooks() {
             </div>
         `).join('');
 
-        // Update chat book select
+        // Update chat book select and preserve current scope if possible.
         const sel = document.getElementById('chat-book-select');
+        const previousValue = sel.value;
         sel.innerHTML = '<option value="">All books</option>' + books.map(b => `<option value="${b.id}">${esc(b.title)}</option>`).join('');
+        if (previousValue && books.some(b => String(b.id) === String(previousValue))) {
+            sel.value = previousValue;
+        }
 
         // Update home stats
         document.getElementById('stat-books').textContent = books.length;
@@ -387,6 +396,22 @@ async function doUpload() {
 }
 
 // ─── Chat ───
+function onChatScopeChange() {
+    const bookSel = document.getElementById('chat-book-select');
+    if (!bookSel) return;
+
+    // New scope should start a fresh conversation thread.
+    chatSessionId = null;
+
+    if (!bookSel.value) {
+        addChatMsg('Scope cleared. Ask me anything across all books.', 'bot');
+        return;
+    }
+
+    const title = bookSel.options[bookSel.selectedIndex]?.text || 'this book';
+    addChatMsg(`You chose "${title}". What do you want to know about it?`, 'bot');
+}
+
 async function sendChat() {
     const input = document.getElementById('chat-input');
     const msg = input.value.trim();

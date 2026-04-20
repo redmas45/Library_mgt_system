@@ -61,7 +61,16 @@ class SearchService:
                 if snippet:
                     snippet = snippet[:240] + ("..." if len(snippet) > 240 else "")
                 else:
-                    snippet = f"Title or author match. Ingestion status: {ingestion_status}."
+                    if ingestion_status in {"pending", "processing"}:
+                        snippet = (
+                            "Title/author match found. This book is still being processed, "
+                            "so deep content excerpts are not ready yet."
+                        )
+                    else:
+                        snippet = (
+                            "Title/author match found. No content excerpt was available "
+                            "for this result."
+                        )
 
                 raw_results.append(
                     {

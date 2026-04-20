@@ -3,7 +3,7 @@ CRUD operations for ReadingStats and Interaction models (analytics).
 """
 
 from sqlalchemy.orm import Session
-from sqlalchemy import func, desc
+from sqlalchemy import func, desc, case
 from typing import Optional, List
 from datetime import datetime, timezone
 
@@ -126,7 +126,7 @@ def get_top_users(db: Session, limit: int = 10) -> List[dict]:
             User.username,
             func.count(BorrowRecord.id).label("total_borrows"),
             func.sum(
-                func.case(
+                case(
                     (BorrowRecord.status == "issued", 1),
                     else_=0,
                 )

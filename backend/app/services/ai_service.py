@@ -61,11 +61,121 @@ class AIService:
             if record.response:
                 conversation_history.append({"role": "assistant", "content": record.response})
 
+        scoped_book = None
+        book = None
+        if book_id is not None:
+            book = get_book_by_id(db, book_id)
+            if not book:
+                raise BookNotFoundError(book_id)
+            ingestion_status = (
+                book.ingestion_status.value
+                if hasattr(book.ingestion_status, "value")
+                else str(book.ingestion_status)
+            )
+            scoped_book = {
+                "book_id": book.id,
+                "title": book.title,
+                "author": book.author or "Unknown",
+                "ingestion_status": ingestion_status,
+            }
+
+            lower = message.lower()
+            # Fast path for common scoped metadata questions.
+            if any(k in lower for k in ["author", "written by", "who wrote", "writer"]):
+                response_text = f'The author listed for "{book.title}" is {book.author or "Unknown"}.'
+                create_interaction(
+                    db=db,
+                    user_id=user.id,
+                    session_id=session_id,
+                    interaction_type="chat",
+                    query=message,
+                    response=response_text,
+                    book_id=book_id,
+                    tokens_used=None,
+                )
+                return ChatResponse(
+                    response=response_text,
+                    session_id=session_id,
+                    sources=[{
+                        "book_id": book.id,
+                        "book_title": book.title,
+                        "page_number": None,
+                        "relevance_score": 1.0,
+                    }],
+                    tokens_used=None,
+                )
+
+            if any(k in lower for k in ["summary", "summarize", "overview", "what is this book about", "about this book"]):
+                if book.summary_cache:
+                    response_text = f'Summary of "{book.title}":\n\n{book.summary_cache}'
+                elif book.description:
+                    response_text = f'Overview of "{book.title}":\n\n{book.description}'
+                elif book.ingestion_status != IngestionStatus.COMPLETED:
+                    response_text = (
+                        f'"{book.title}" is selected, but I do not have a ready summary yet. '
+                        "Try asking again after ingestion completes."
+                    )
+                else:
+                    response_text = None
+
+                if response_text is not None:
+                    create_interaction(
+                        db=db,
+                        user_id=user.id,
+                        session_id=session_id,
+                        interaction_type="chat",
+                        query=message,
+                        response=response_text,
+                        book_id=book_id,
+                        tokens_used=None,
+                    )
+                    return ChatResponse(
+                        response=response_text,
+                        session_id=session_id,
+                        sources=[{
+                            "book_id": book.id,
+                            "book_title": book.title,
+                            "page_number": None,
+                            "relevance_score": 1.0,
+                        }],
+                        tokens_used=None,
+                    )
+
+            if book.ingestion_status != IngestionStatus.COMPLETED:
+                response_text = (
+                    f'You selected "{book.title}", but its content is still being processed '
+                    f'(status: {ingestion_status}). I can answer metadata questions now '
+                    "and full content questions once ingestion is completed."
+                )
+                create_interaction(
+                    db=db,
+                    user_id=user.id,
+                    session_id=session_id,
+                    interaction_type="chat",
+                    query=message,
+                    response=response_text,
+                    book_id=book_id,
+                    tokens_used=None,
+                )
+                return ChatResponse(
+                    response=response_text,
+                    session_id=session_id,
+                    sources=[{
+                        "book_id": book.id,
+                        "book_title": book.title,
+                        "page_number": None,
+                        "relevance_score": 0.6,
+                    }],
+                    tokens_used=None,
+                )
+
         # Get librarian response
         result = self.librarian.chat(
             user_message=message,
             conversation_history=conversation_history,
             book_id=book_id,
+            scoped_book=scoped_book,
+            top_k=8 if book_id is not None else 5,
         )
 
         # Log interaction

@@ -28,6 +28,21 @@ LIBRARIAN_CONTEXT_PROMPT = """Based on the following excerpts from our library:
 
 Please answer the user's question. Cite the source book and page when relevant."""
 
+LIBRARIAN_BOOK_SCOPE_PROMPT = """The user has scoped this conversation to one specific book.
+
+Selected book:
+- ID: {book_id}
+- Title: {title}
+- Author: {author}
+- Ingestion status: {ingestion_status}
+
+Rules for this scoped conversation:
+1. Prioritize this selected book only.
+2. If the user asks something that is not available in the selected book context, clearly say that.
+3. Do not switch to other books unless the user removes scope or asks to change scope.
+4. If the book is not fully ingested, use only known metadata and clearly mention that full content search is not ready yet.
+"""
+
 # --- Q&A Engine (RAG) ---
 QA_SYSTEM_PROMPT = """You are a precise Q&A assistant for a library system. 
 Your job is to answer questions based STRICTLY on the provided context.

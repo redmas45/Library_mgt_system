@@ -44,7 +44,13 @@ class BorrowRecord(Base, TimestampMixin):
         status = self.status.value if hasattr(self.status, 'value') else self.status
         if status == "returned":
             return False
-        return datetime.now(timezone.utc) > self.due_date
+        if not self.due_date:
+            return False
+        due_date = self.due_date
+        # SQLite often returns naive datetimes; treat them as UTC for consistency.
+        if due_date.tzinfo is None:
+            due_date = due_date.replace(tzinfo=timezone.utc)
+        return datetime.now(timezone.utc) > due_date
 
     def __repr__(self):
         return f"<BorrowRecord(id={self.id}, user_id={self.user_id}, status='{self.status}')>"

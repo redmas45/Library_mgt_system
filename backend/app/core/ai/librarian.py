@@ -4,7 +4,11 @@ AI Librarian — Conversational assistant with context from the library.
 
 from typing import List, Dict, Optional
 from app.core.ai.openai_llm import OpenAILLM
-from app.core.ai.prompt_templates import LIBRARIAN_SYSTEM_PROMPT, LIBRARIAN_CONTEXT_PROMPT
+from app.core.ai.prompt_templates import (
+    LIBRARIAN_SYSTEM_PROMPT,
+    LIBRARIAN_CONTEXT_PROMPT,
+    LIBRARIAN_BOOK_SCOPE_PROMPT,
+)
 from app.core.embeddings.vector_store import VectorStore
 from app.utils.logger import logger
 
@@ -21,6 +25,7 @@ class Librarian:
         user_message: str,
         conversation_history: List[Dict[str, str]] = None,
         book_id: Optional[int] = None,
+        scoped_book: Optional[Dict] = None,
         top_k: int = 5,
     ) -> Dict:
         """
@@ -59,6 +64,15 @@ class Librarian:
 
         # Build messages
         messages = [{"role": "system", "content": LIBRARIAN_SYSTEM_PROMPT}]
+
+        if scoped_book:
+            scope_message = LIBRARIAN_BOOK_SCOPE_PROMPT.format(
+                book_id=scoped_book.get("book_id", ""),
+                title=scoped_book.get("title", "Unknown"),
+                author=scoped_book.get("author", "Unknown"),
+                ingestion_status=scoped_book.get("ingestion_status", "unknown"),
+            )
+            messages.append({"role": "system", "content": scope_message})
 
         # Add conversation history (last 10 messages to stay within token limits)
         if conversation_history:
