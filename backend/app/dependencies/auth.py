@@ -6,7 +6,7 @@ from jose import JWTError, jwt
 from datetime import datetime, timedelta, timezone
 
 from app.config import get_settings
-from app.db.database import get_db
+from app.dependencies.db import get_db
 from app.db.crud.user_crud import get_user_by_id
 from app.db.models.user import User, UserRole
 from app.exceptions.auth_exceptions import (
