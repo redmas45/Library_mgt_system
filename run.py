@@ -249,9 +249,9 @@ def _start_server():
     """Internal: start uvicorn server."""
     print(f"""
   ┌──────────────────────────────────────────┐
-  │  🌐 API:     http://127.0.0.1:8000      │
-  │  📖 Docs:    http://127.0.0.1:8000/docs │
-  │  💚 Health:  http://127.0.0.1:8000/health│
+  │  🌐 API:     http://127.0.0.1:8080      │
+  │  📖 Docs:    http://127.0.0.1:8080/docs │
+  │  💚 Health:  http://127.0.0.1:8080/health│
   └──────────────────────────────────────────┘
 
   Press Ctrl+C to stop the server.
@@ -264,7 +264,7 @@ def _start_server():
                 PYTHON, "-m", "uvicorn",
                 "app.main:app",
                 "--host", "127.0.0.1",
-                "--port", "8000",
+                "--port", "8080",
                 "--reload",
             ],
             cwd=str(BACKEND_DIR),

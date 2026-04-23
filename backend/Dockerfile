@@ -17,8 +17,8 @@ COPY . .
 # Create data directories
 RUN mkdir -p data/books data/processed data/embeddings logs
 
-# Expose port
-EXPOSE 8000
+# Expose default port
+EXPOSE 8080
 
-# Run with uvicorn
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
+# Run with uvicorn (using shell form to resolve $PORT variable)
+CMD uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-8080}
