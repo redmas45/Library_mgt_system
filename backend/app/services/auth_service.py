@@ -95,7 +95,7 @@ def login_user(db: Session, email: str, password: str) -> Token:
 
     access_token = create_access_token(
         data={
-            "sub": user.id,
+            "sub": str(user.id),
             "email": user.email,
             "role": user.role.value if isinstance(user.role, UserRole) else user.role,
         }
