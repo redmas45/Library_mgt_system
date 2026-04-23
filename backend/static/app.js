@@ -341,7 +341,7 @@ async function askQuestion(bookId) {
     answerEl.innerHTML = '⏳ Thinking...';
     try {
         const data = await apiPost('/ai/qa', { question: input.value, book_id: bookId });
-        answerEl.innerHTML = `<strong>Answer:</strong><br>${esc(data.answer)}`;
+        answerEl.innerHTML = `<div class="markdown-body"><strong>Answer:</strong><br>${renderMarkdown(data.answer)}</div>`;
     } catch (e) {
         answerEl.innerHTML = `<span style="color:var(--danger)">${e.detail || 'Failed to get answer'}</span>`;
     }
@@ -353,9 +353,9 @@ async function getSummary(bookId) {
     section.innerHTML = '<h3>📋 Summary</h3><p>⏳ Generating summary...</p>';
     try {
         const data = await apiPost('/ai/summary', { book_id: bookId });
-        let html = `<h3>📋 Summary ${data.is_cached ? '(cached)' : ''}</h3><p>${esc(data.summary)}</p>`;
+        let html = `<h3>📋 Summary ${data.is_cached ? '(cached)' : ''}</h3><div class="markdown-body">${renderMarkdown(data.summary)}</div>`;
         if (data.key_ideas && data.key_ideas.length) {
-            html += '<h4 style="margin-top:1rem;">Key Ideas</h4><ul>' + data.key_ideas.map(i => `<li>${esc(i)}</li>`).join('') + '</ul>';
+            html += '<h4 style="margin-top:1rem;">Key Ideas</h4><div class="markdown-body"><ul>' + data.key_ideas.map(i => `<li>${renderMarkdown(i)}</li>`).join('') + '</ul></div>';
         }
         section.innerHTML = html;
     } catch (e) {
@@ -460,7 +460,8 @@ function addChatMsg(text, role) {
     const id = 'msg-' + Date.now() + Math.random();
     const container = document.getElementById('chat-messages');
     const avatar = role === 'bot' ? '🤖' : '👤';
-    container.innerHTML += `<div class="chat-msg ${role}" id="${id}"><div class="msg-avatar">${avatar}</div><div class="msg-content">${esc(text)}</div></div>`;
+    const content = role === 'bot' ? renderMarkdown(text) : esc(text);
+    container.innerHTML += `<div class="chat-msg ${role}" id="${id}"><div class="msg-avatar">${avatar}</div><div class="msg-content ${role === 'bot' ? 'markdown-body' : ''}">${content}</div></div>`;
     container.scrollTop = container.scrollHeight;
     return id;
 }
@@ -531,6 +532,18 @@ function esc(str) {
     const div = document.createElement('div');
     div.textContent = str;
     return div.innerHTML;
+}
+
+function renderMarkdown(str) {
+    if (!str) return '';
+    if (typeof marked !== 'undefined') {
+        try {
+            return marked.parse(str);
+        } catch (e) {
+            console.warn('Markdown parsing failed', e);
+        }
+    }
+    return esc(str).replace(/\n/g, '<br>');
 }
 
 function formatDateTime(value) {
