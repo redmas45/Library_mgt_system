@@ -20,6 +20,28 @@ async def lifespan(app: FastAPI):
     settings.ensure_directories()
     Base.metadata.create_all(bind=engine)
 
+    # Auto-seed admin user if missing
+    from app.db.database import SessionLocal
+    from app.db.crud.user_crud import get_user_by_email, create_user
+    from app.db.models.user import UserRole
+    from passlib.context import CryptContext
+    
+    db = SessionLocal()
+    try:
+        if not get_user_by_email(db, "admin@library.ai"):
+            pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+            create_user(
+                db=db,
+                email="admin@library.ai",
+                username="admin",
+                hashed_password=pwd_context.hash("admin123"),
+                full_name="System Administrator",
+                role=UserRole.ADMIN,
+            )
+            logger.info("Seeded default admin user (admin@library.ai)")
+    finally:
+        db.close()
+
     logger.info(f"{settings.APP_NAME} v{settings.APP_VERSION} starting up")
     logger.info(f"Database: {settings.DATABASE_URL}")
     logger.info(f"Books storage: {settings.BOOKS_STORAGE_PATH}")

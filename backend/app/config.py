@@ -16,7 +16,7 @@ class Settings(BaseSettings):
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 1440  # 24 hours
 
     OPENAI_API_KEY: str = ""
-    OPENAI_MODEL: str = "gpt-3.5-turbo"
+    OPENAI_MODEL: str = "openai/gpt-oss-120b"
     OPENAI_BASE_URL: str = ""
 
     EMBEDDING_MODEL: str = "sentence-transformers/all-MiniLM-L6-v2"
