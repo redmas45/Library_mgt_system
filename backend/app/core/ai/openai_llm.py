@@ -5,7 +5,7 @@ from app.utils.logger import logger
 class OpenAILLM:
     """Wrapper around OpenAI's chat completion API. Supports custom base URLs for providers like Groq."""
 
-    def __init__(self, api_key: str, model: str = "gpt-3.5-turbo", base_url: str = ""):
+    def __init__(self, api_key: str, model: str = "openai/gpt-oss-120b", base_url: str = ""):
         self.api_key = api_key
         self.model = model
         self.base_url = base_url or None

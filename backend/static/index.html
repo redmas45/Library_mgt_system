@@ -22,6 +22,7 @@
             <a href="#" onclick="showPage('books')" class="nav-link" data-page="books">Books</a>
             <a href="#" onclick="showPage('chat')" class="nav-link" data-page="chat">AI Chat</a>
             <a href="#" onclick="showPage('search')" class="nav-link" data-page="search">Search</a>
+            <a href="#" onclick="showPage('mybooks')" class="nav-link" data-page="mybooks" id="nav-mybooks-link" style="display:none">My Books</a>
             <a href="#" onclick="showPage('admin')" class="nav-link" data-page="admin" id="nav-admin-link" style="display:none">Admin</a>
         </div>
         <div class="nav-actions">
@@ -129,6 +130,47 @@
                 </div>
             </div>
             <div id="search-results" class="search-results"></div>
+        </div>
+    </section>
+
+    <!-- MY BOOKS PAGE -->
+    <section class="page" id="page-mybooks">
+        <div class="page-container">
+            <div class="page-header">
+                <h1>My Books</h1>
+                <div class="page-header-actions">
+                    <button class="btn btn-outline" onclick="loadMyBooks()">Refresh</button>
+                </div>
+            </div>
+
+            <div class="admin-kpis" id="mybooks-kpis">
+                <div class="admin-kpi-card"><h4>Active Borrows</h4><p id="my-active-borrows">-</p></div>
+                <div class="admin-kpi-card"><h4>Borrow Limit</h4><p id="my-borrow-limit">3</p></div>
+                <div class="admin-kpi-card"><h4>Overdue Books</h4><p id="my-overdue-borrows">-</p></div>
+                <div class="admin-kpi-card"><h4>Total Lifetime Borrows</h4><p id="my-total-borrows">-</p></div>
+            </div>
+
+            <div class="admin-panel">
+                <h3>My Borrow History</h3>
+                <p class="admin-note">Your active and past borrowed books.</p>
+                <div class="admin-table-wrap">
+                    <table class="admin-table">
+                        <thead>
+                            <tr>
+                                <th>Book Title</th>
+                                <th>Issued On</th>
+                                <th>Due Date</th>
+                                <th>Returned On</th>
+                                <th>Status</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="my-borrow-rows">
+                            <tr><td colspan="6">Loading your books...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
         </div>
     </section>
 

@@ -25,7 +25,7 @@ from app.exceptions.borrow_exceptions import (
 )
 from app.utils.logger import logger
 
-MAX_ACTIVE_BORROWS = 5
+MAX_ACTIVE_BORROWS = 3
 
 
 def borrow_book(db: Session, user: User, book_id: int) -> BorrowReceiptResponse:
@@ -35,7 +35,7 @@ def borrow_book(db: Session, user: User, book_id: int) -> BorrowReceiptResponse:
     if has_active_borrow(db, user.id, book_id):
         raise AlreadyBorrowedError(book_id)
     active = get_user_active_borrows(db, user.id)
-    if len(active) >= MAX_ACTIVE_BORROWS:
+    if user.role != UserRole.ADMIN and len(active) >= MAX_ACTIVE_BORROWS:
         raise MaxBorrowLimitError(MAX_ACTIVE_BORROWS)
     copy = get_available_copy(db, book_id)
     if not copy:

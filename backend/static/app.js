@@ -52,6 +52,7 @@ function showPage(name) {
     const link = document.querySelector(`.nav-link[data-page="${name}"]`);
     if (link) link.classList.add('active');
     if (name === 'books') loadBooks();
+    if (name === 'mybooks') loadMyBooks();
     if (name === 'admin') loadAdminDashboard();
 }
 
@@ -124,6 +125,7 @@ function logout() {
 
 function updateAuthUI() {
     const adminLink = document.getElementById('nav-admin-link');
+    const myBooksLink = document.getElementById('nav-mybooks-link');
     if (token && currentUser) {
         document.getElementById('auth-section-logged-in').style.display = 'flex';
         document.getElementById('auth-section-logged-out').style.display = 'none';
@@ -132,11 +134,13 @@ function updateAuthUI() {
         const role = (currentUser.role || '').toLowerCase();
         document.getElementById('upload-btn').style.display = (role === 'admin') ? 'inline-flex' : 'none';
         if (adminLink) adminLink.style.display = (role === 'admin') ? 'inline-flex' : 'none';
+        if (myBooksLink) myBooksLink.style.display = 'inline-flex';
     } else {
         document.getElementById('auth-section-logged-in').style.display = 'none';
         document.getElementById('auth-section-logged-out').style.display = 'flex';
         document.getElementById('upload-btn').style.display = 'none';
         if (adminLink) adminLink.style.display = 'none';
+        if (myBooksLink) myBooksLink.style.display = 'none';
     }
 }
 
@@ -230,6 +234,62 @@ async function adminReturnBook(borrowId) {
         await apiPost('/borrow/return', { borrow_id: borrowId });
         toast('Book returned successfully', 'success');
         loadAdminDashboard();
+    } catch (e) {
+        toast(e.detail || 'Failed to return book', 'error');
+    }
+}
+
+async function loadMyBooks() {
+    const tbody = document.getElementById('my-borrow-rows');
+    if (!token) {
+        if (tbody) tbody.innerHTML = '<tr><td colspan="6">Please sign in to view your books.</td></tr>';
+        return;
+    }
+
+    try {
+        const res = await apiGet('/borrow/history?limit=100');
+        
+        document.getElementById('my-active-borrows').textContent = res.active_borrows ?? 0;
+        document.getElementById('my-borrow-limit').textContent = (currentUser && currentUser.role === 'admin') ? 'Unlimited' : '3';
+        document.getElementById('my-overdue-borrows').textContent = res.overdue_borrows ?? 0;
+        document.getElementById('my-total-borrows').textContent = res.total ?? 0;
+
+        const rows = res.records || [];
+        if (!rows.length) {
+            if (tbody) tbody.innerHTML = '<tr><td colspan="6">You have no borrow history.</td></tr>';
+            return;
+        }
+
+        if (tbody) {
+            tbody.innerHTML = rows.map((record) => {
+                const statusRaw = (record.status || 'unknown').toLowerCase();
+                const statusClass = `admin-status admin-status-${statusRaw}`;
+                const returnBtn = statusRaw === 'issued' ? `<button class="btn btn-sm btn-outline" onclick="userReturnBook(${record.id})">Return Book</button>` : '-';
+                return `
+                    <tr>
+                        <td>${esc(record.book_title || 'Unknown')}</td>
+                        <td>${formatDateTime(record.issued_at)}</td>
+                        <td>${formatDateTime(record.due_date)}</td>
+                        <td>${record.returned_at ? formatDateTime(record.returned_at) : '-'}</td>
+                        <td><span class="${statusClass}">${esc(statusRaw)}</span></td>
+                        <td>${returnBtn}</td>
+                    </tr>
+                `;
+            }).join('');
+        }
+    } catch (e) {
+        if (tbody) {
+            tbody.innerHTML = `<tr><td colspan="6" style="color:var(--danger)">${esc(e.detail || 'Failed to load your books')}</td></tr>`;
+        }
+    }
+}
+
+async function userReturnBook(borrowId) {
+    if (!confirm('Are you sure you want to return this book?')) return;
+    try {
+        await apiPost('/borrow/return', { borrow_id: borrowId });
+        toast('Book returned successfully', 'success');
+        loadMyBooks(); // Reload the UI so they see the updated slot
     } catch (e) {
         toast(e.detail || 'Failed to return book', 'error');
     }
