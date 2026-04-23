@@ -1,7 +1,3 @@
-"""
-Pydantic schemas for Dashboard analytics.
-"""
-
 from pydantic import BaseModel
 from typing import List, Optional
 

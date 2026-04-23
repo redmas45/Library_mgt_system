@@ -1,7 +1,3 @@
-"""
-Borrow routes — borrow, return, and history endpoints.
-"""
-
 from fastapi import APIRouter, Depends, Query
 from sqlalchemy.orm import Session
 
@@ -32,7 +28,6 @@ def borrow_book_endpoint(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    """Borrow a book. Finds an available copy automatically."""
     return borrow_book(db, current_user, request.book_id)
 
 
@@ -42,7 +37,6 @@ def return_book_endpoint(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    """Return a borrowed book."""
     return return_borrowed_book(db, current_user, request.borrow_id)
 
 
@@ -53,7 +47,6 @@ def get_history(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    """Get the current user's borrow history."""
     return get_borrow_history(db, current_user, skip=skip, limit=limit)
 
 
@@ -64,5 +57,4 @@ def get_admin_history(
     db: Session = Depends(get_db),
     current_admin: User = Depends(get_current_admin),
 ):
-    """Get borrow history across all users (Admin only)."""
     return get_admin_borrow_history(db, skip=skip, limit=limit)

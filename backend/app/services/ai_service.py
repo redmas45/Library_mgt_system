@@ -1,7 +1,3 @@
-"""
-AI service — orchestrates AI features (chat, Q&A, summary) with DB logging.
-"""
-
 import uuid
 from sqlalchemy.orm import Session
 from typing import Optional, List, Dict
@@ -31,7 +27,6 @@ from app.utils.logger import logger
 
 
 class AIService:
-    """Orchestrates all AI features with DB persistence."""
 
     def __init__(self, llm: OpenAILLM, vector_store: VectorStore):
         self.librarian = Librarian(llm, vector_store)
@@ -47,9 +42,6 @@ class AIService:
         session_id: Optional[str] = None,
         book_id: Optional[int] = None,
     ) -> ChatResponse:
-        """Process a chat message with the AI librarian."""
-
-        # Generate session ID if not provided
         if not session_id:
             session_id = str(uuid.uuid4())
 
@@ -80,27 +72,20 @@ class AIService:
             }
 
             lower = message.lower()
-            # Fast path for common scoped metadata questions.
+
+            # Quick answers for common metadata questions
             if any(k in lower for k in ["author", "written by", "who wrote", "writer"]):
                 response_text = f'The author listed for "{book.title}" is {book.author or "Unknown"}.'
                 create_interaction(
-                    db=db,
-                    user_id=user.id,
-                    session_id=session_id,
-                    interaction_type="chat",
-                    query=message,
-                    response=response_text,
-                    book_id=book_id,
-                    tokens_used=None,
+                    db=db, user_id=user.id, session_id=session_id,
+                    interaction_type="chat", query=message,
+                    response=response_text, book_id=book_id, tokens_used=None,
                 )
                 return ChatResponse(
-                    response=response_text,
-                    session_id=session_id,
+                    response=response_text, session_id=session_id,
                     sources=[{
-                        "book_id": book.id,
-                        "book_title": book.title,
-                        "page_number": None,
-                        "relevance_score": 1.0,
+                        "book_id": book.id, "book_title": book.title,
+                        "page_number": None, "relevance_score": 1.0,
                     }],
                     tokens_used=None,
                 )
@@ -120,23 +105,15 @@ class AIService:
 
                 if response_text is not None:
                     create_interaction(
-                        db=db,
-                        user_id=user.id,
-                        session_id=session_id,
-                        interaction_type="chat",
-                        query=message,
-                        response=response_text,
-                        book_id=book_id,
-                        tokens_used=None,
+                        db=db, user_id=user.id, session_id=session_id,
+                        interaction_type="chat", query=message,
+                        response=response_text, book_id=book_id, tokens_used=None,
                     )
                     return ChatResponse(
-                        response=response_text,
-                        session_id=session_id,
+                        response=response_text, session_id=session_id,
                         sources=[{
-                            "book_id": book.id,
-                            "book_title": book.title,
-                            "page_number": None,
-                            "relevance_score": 1.0,
+                            "book_id": book.id, "book_title": book.title,
+                            "page_number": None, "relevance_score": 1.0,
                         }],
                         tokens_used=None,
                     )
@@ -148,28 +125,19 @@ class AIService:
                     "and full content questions once ingestion is completed."
                 )
                 create_interaction(
-                    db=db,
-                    user_id=user.id,
-                    session_id=session_id,
-                    interaction_type="chat",
-                    query=message,
-                    response=response_text,
-                    book_id=book_id,
-                    tokens_used=None,
+                    db=db, user_id=user.id, session_id=session_id,
+                    interaction_type="chat", query=message,
+                    response=response_text, book_id=book_id, tokens_used=None,
                 )
                 return ChatResponse(
-                    response=response_text,
-                    session_id=session_id,
+                    response=response_text, session_id=session_id,
                     sources=[{
-                        "book_id": book.id,
-                        "book_title": book.title,
-                        "page_number": None,
-                        "relevance_score": 0.6,
+                        "book_id": book.id, "book_title": book.title,
+                        "page_number": None, "relevance_score": 0.6,
                     }],
                     tokens_used=None,
                 )
 
-        # Get librarian response
         result = self.librarian.chat(
             user_message=message,
             conversation_history=conversation_history,
@@ -178,15 +146,10 @@ class AIService:
             top_k=8 if book_id is not None else 5,
         )
 
-        # Log interaction
         create_interaction(
-            db=db,
-            user_id=user.id,
-            session_id=session_id,
-            interaction_type="chat",
-            query=message,
-            response=result["response"],
-            book_id=book_id,
+            db=db, user_id=user.id, session_id=session_id,
+            interaction_type="chat", query=message,
+            response=result["response"], book_id=book_id,
             tokens_used=result.get("tokens_used"),
         )
 
@@ -204,9 +167,6 @@ class AIService:
         question: str,
         book_id: int,
     ) -> QAResponse:
-        """Answer a question about a specific book using RAG."""
-
-        # Verify book exists and is ingested
         book = get_book_by_id(db, book_id)
         if not book:
             raise BookNotFoundError(book_id)
@@ -214,25 +174,18 @@ class AIService:
         if book.ingestion_status != IngestionStatus.COMPLETED:
             raise BookNotIngestedError(book_id)
 
-        # Get answer
         result = self.qa_engine.answer(
             question=question,
             book_id=book_id,
             book_title=book.title,
         )
 
-        # Update stats
         increment_qa_count(db, user.id, book_id)
 
-        # Log interaction
         create_interaction(
-            db=db,
-            user_id=user.id,
-            session_id=str(uuid.uuid4()),
-            interaction_type="qa",
-            query=question,
-            response=result["answer"],
-            book_id=book_id,
+            db=db, user_id=user.id, session_id=str(uuid.uuid4()),
+            interaction_type="qa", query=question,
+            response=result["answer"], book_id=book_id,
             tokens_used=result.get("tokens_used"),
         )
 
@@ -251,8 +204,6 @@ class AIService:
         book_id: int,
         force_regenerate: bool = False,
     ) -> SummaryResponse:
-        """Generate or retrieve a cached book summary."""
-
         book = get_book_by_id(db, book_id)
         if not book:
             raise BookNotFoundError(book_id)
@@ -260,9 +211,8 @@ class AIService:
         if book.ingestion_status != IngestionStatus.COMPLETED:
             raise BookNotIngestedError(book_id)
 
-        # Return cached summary if available and not forcing regeneration
         if book.summary_cache and not force_regenerate:
-            logger.info(f"📋 Returning cached summary for book_id={book_id}")
+            logger.info(f"Returning cached summary for book_id={book_id}")
             return SummaryResponse(
                 book_id=book_id,
                 book_title=book.title,
@@ -271,14 +221,12 @@ class AIService:
                 is_cached=True,
             )
 
-        # Generate new summary
         result = self.summarizer.summarize(
             book_id=book_id,
             book_title=book.title,
             author=book.author or "Unknown",
         )
 
-        # Cache the summary
         full_summary = result["summary"]
         if result["key_ideas"]:
             full_summary += "\n\nKey Ideas:\n" + "\n".join(
@@ -286,15 +234,10 @@ class AIService:
             )
         update_book(db, book_id, summary_cache=full_summary)
 
-        # Log interaction
         create_interaction(
-            db=db,
-            user_id=user.id,
-            session_id=str(uuid.uuid4()),
-            interaction_type="summary",
-            query=f"Summarize: {book.title}",
-            response=result["summary"][:500],
-            book_id=book_id,
+            db=db, user_id=user.id, session_id=str(uuid.uuid4()),
+            interaction_type="summary", query=f"Summarize: {book.title}",
+            response=result["summary"][:500], book_id=book_id,
             tokens_used=result.get("tokens_used"),
         )
 

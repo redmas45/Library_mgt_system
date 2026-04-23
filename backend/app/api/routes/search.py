@@ -1,7 +1,3 @@
-"""
-Search routes — semantic search across library content.
-"""
-
 from fastapi import APIRouter, Depends, Query as QueryParam
 from sqlalchemy.orm import Session
 from typing import Optional
@@ -24,7 +20,6 @@ def semantic_search(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    """Semantic search across library content. Returns ranked passages."""
     search_service = SearchService(vector_store=get_vector_store())
     return search_service.search(
         db=db,

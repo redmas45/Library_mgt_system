@@ -1,7 +1,3 @@
-"""
-Interaction model — stores AI chat logs and conversation history.
-"""
-
 from sqlalchemy import Column, Integer, String, Text, ForeignKey, DateTime
 from sqlalchemy.orm import relationship
 from datetime import datetime, timezone
@@ -17,15 +13,10 @@ class Interaction(Base):
     interaction_type = Column(String(50), nullable=False)  # chat, search, qa, summary
     query = Column(Text, nullable=False)
     response = Column(Text, nullable=True)
-    book_id = Column(Integer, ForeignKey("books.id"), nullable=True)  # If book-specific
+    book_id = Column(Integer, ForeignKey("books.id"), nullable=True)
     tokens_used = Column(Integer, nullable=True)
-    created_at = Column(
-        DateTime,
-        default=lambda: datetime.now(timezone.utc),
-        nullable=False,
-    )
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), nullable=False)
 
-    # Relationships
     user = relationship("User", back_populates="interactions")
 
     def __repr__(self):

@@ -1,7 +1,3 @@
-"""
-BookCopy model — individual physical copies of a book.
-"""
-
 from sqlalchemy import Column, Integer, String, ForeignKey, Enum as SAEnum
 from sqlalchemy.orm import relationship
 from app.db.models.base import Base, TimestampMixin
@@ -23,7 +19,6 @@ class BookCopy(Base, TimestampMixin):
     status = Column(SAEnum("available", "issued", "lost", name="copystatus"), default="available", nullable=False)
     condition_notes = Column(String(500), nullable=True)
 
-    # Relationships
     book = relationship("Book", back_populates="copies")
     borrow_records = relationship("BorrowRecord", back_populates="book_copy")
 

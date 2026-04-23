@@ -1,13 +1,7 @@
-"""
-Pydantic schemas for User-related request/response validation.
-"""
-
 from pydantic import BaseModel, EmailStr, Field
 from typing import Optional
 from datetime import datetime
 
-
-# --- Request Schemas ---
 
 class UserCreate(BaseModel):
     email: str = Field(..., min_length=5, max_length=255, examples=["user@example.com"])
@@ -21,8 +15,6 @@ class UserLogin(BaseModel):
     password: str = Field(...)
 
 
-# --- Response Schemas ---
-
 class UserResponse(BaseModel):
     id: int
     email: str
@@ -31,17 +23,13 @@ class UserResponse(BaseModel):
     role: str
     is_active: int
     created_at: datetime
-
     model_config = {"from_attributes": True}
 
 
 class UserProfile(UserResponse):
-    """Extended profile with stats."""
     total_borrows: int = 0
     active_borrows: int = 0
 
-
-# --- Token Schemas ---
 
 class Token(BaseModel):
     access_token: str

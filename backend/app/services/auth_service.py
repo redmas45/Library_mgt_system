@@ -1,7 +1,3 @@
-"""
-Auth service — handles user registration, login, and password hashing.
-"""
-
 from sqlalchemy.orm import Session
 from passlib.context import CryptContext
 from fastapi import HTTPException, status
@@ -20,25 +16,20 @@ pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 
 def hash_password(password: str) -> str:
-    """Hash a plain text password."""
     return pwd_context.hash(password)
 
 
 def verify_password(plain_password: str, hashed_password: str) -> bool:
-    """Verify a plain text password against a hash."""
     return pwd_context.verify(plain_password, hashed_password)
 
 
 def register_user(db: Session, user_data: UserCreate) -> User:
-    """Register a new user."""
-    # Check if email already exists
     if get_user_by_email(db, user_data.email):
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
             detail="Email already registered",
         )
 
-    # Check if username already exists
     if get_user_by_username(db, user_data.username):
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
@@ -53,12 +44,11 @@ def register_user(db: Session, user_data: UserCreate) -> User:
         hashed_password=hashed_pw,
         full_name=user_data.full_name,
     )
-    logger.info(f"✅ New user registered: {user.email}")
+    logger.info(f"New user registered: {user.email}")
     return user
 
 
 def register_admin(db: Session, user_data: UserCreate) -> User:
-    """Register a new admin user."""
     if get_user_by_email(db, user_data.email):
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
@@ -79,12 +69,11 @@ def register_admin(db: Session, user_data: UserCreate) -> User:
         full_name=user_data.full_name,
         role=UserRole.ADMIN,
     )
-    logger.info(f"✅ New admin registered: {user.email}")
+    logger.info(f"New admin registered: {user.email}")
     return user
 
 
 def login_user(db: Session, email: str, password: str) -> Token:
-    """Authenticate a user and return a JWT token."""
     user = get_user_by_email(db, email)
     if not user:
         raise HTTPException(
@@ -104,7 +93,6 @@ def login_user(db: Session, email: str, password: str) -> Token:
             detail="Account is deactivated",
         )
 
-    # Create JWT token
     access_token = create_access_token(
         data={
             "sub": user.id,
@@ -112,5 +100,5 @@ def login_user(db: Session, email: str, password: str) -> Token:
             "role": user.role.value if isinstance(user.role, UserRole) else user.role,
         }
     )
-    logger.info(f"🔑 User logged in: {user.email}")
+    logger.info(f"User logged in: {user.email}")
     return Token(access_token=access_token)

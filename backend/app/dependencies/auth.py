@@ -1,98 +1,59 @@
-"""
-Authentication dependency — JWT token creation and validation.
-"""
-
-from datetime import datetime, timedelta, timezone
-from typing import Optional
-
-from fastapi import Depends, HTTPException, status
-from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
-from jose import JWTError, jwt
+from fastapi import Depends
+from fastapi.security import OAuth2PasswordBearer
 from sqlalchemy.orm import Session
+from passlib.context import CryptContext
+from jose import JWTError, jwt
+from datetime import datetime, timedelta, timezone
 
 from app.config import get_settings
-from app.dependencies.db import get_db
+from app.db.database import get_db
 from app.db.crud.user_crud import get_user_by_id
 from app.db.models.user import User, UserRole
-from app.db.schemas.user_schemas import TokenData
+from app.exceptions.auth_exceptions import (
+    CredentialsException,
+    InactiveUserException,
+    AdminPrivilegeRequiredException,
+)
 
 settings = get_settings()
-security = HTTPBearer()
+
+pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="api/auth/login")
 
 
-def create_access_token(
-    data: dict, expires_delta: Optional[timedelta] = None
-) -> str:
-    """Create a JWT access token."""
+def create_access_token(data: dict, expires_delta: timedelta | None = None) -> str:
     to_encode = data.copy()
-    # JWT subject claim should be a string.
-    if to_encode.get("sub") is not None:
-        to_encode["sub"] = str(to_encode["sub"])
-    expire = datetime.now(timezone.utc) + (
-        expires_delta or timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
-    )
+    if expires_delta:
+        expire = datetime.now(timezone.utc) + expires_delta
+    else:
+        expire = datetime.now(timezone.utc) + timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
     to_encode.update({"exp": expire})
-    return jwt.encode(to_encode, settings.SECRET_KEY, algorithm=settings.ALGORITHM)
-
-
-def verify_token(token: str) -> TokenData:
-    """Verify and decode a JWT token."""
-    try:
-        payload = jwt.decode(
-            token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM]
-        )
-        raw_user_id = payload.get("sub")
-        email: str = payload.get("email")
-        role: str = payload.get("role")
-        if raw_user_id is None:
-            raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="Invalid token: missing user ID",
-            )
-
-        try:
-            user_id = int(raw_user_id)
-        except (TypeError, ValueError):
-            raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="Invalid token: malformed user ID",
-            )
-
-        return TokenData(user_id=user_id, email=email, role=role)
-    except JWTError:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Invalid or expired token",
-        )
+    encoded_jwt = jwt.encode(to_encode, settings.SECRET_KEY, algorithm=settings.ALGORITHM)
+    return encoded_jwt
 
 
 def get_current_user(
-    credentials: HTTPAuthorizationCredentials = Depends(security),
-    db: Session = Depends(get_db),
+    token: str = Depends(oauth2_scheme), db: Session = Depends(get_db)
 ) -> User:
-    """Get the current authenticated user from the JWT token."""
-    token_data = verify_token(credentials.credentials)
-    user = get_user_by_id(db, token_data.user_id)
+    try:
+        payload = jwt.decode(token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM])
+        user_id: int | None = payload.get("sub")
+        if user_id is None:
+            raise CredentialsException()
+    except JWTError:
+        raise CredentialsException()
+
+    user = get_user_by_id(db, user_id=int(user_id))
     if user is None:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="User not found",
-        )
+        raise CredentialsException()
+
     if not user.is_active:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="User account is deactivated",
-        )
+        raise InactiveUserException()
+
     return user
 
 
-def get_current_admin(
-    current_user: User = Depends(get_current_user),
-) -> User:
-    """Ensure the current user has admin role."""
+def get_current_admin(current_user: User = Depends(get_current_user)) -> User:
     if current_user.role != UserRole.ADMIN:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Admin access required",
-        )
+        raise AdminPrivilegeRequiredException()
     return current_user

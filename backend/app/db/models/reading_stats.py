@@ -1,7 +1,3 @@
-"""
-ReadingStats model — tracks usage analytics per user and book.
-"""
-
 from sqlalchemy import Column, Integer, ForeignKey, DateTime
 from sqlalchemy.orm import relationship
 from datetime import datetime, timezone
@@ -16,14 +12,9 @@ class ReadingStats(Base):
     book_id = Column(Integer, ForeignKey("books.id"), nullable=False, index=True)
     times_borrowed = Column(Integer, default=0, nullable=False)
     times_searched = Column(Integer, default=0, nullable=False)
-    times_asked = Column(Integer, default=0, nullable=False)  # Q&A queries
-    last_accessed = Column(
-        DateTime,
-        default=lambda: datetime.now(timezone.utc),
-        nullable=False,
-    )
+    times_asked = Column(Integer, default=0, nullable=False)
+    last_accessed = Column(DateTime, default=lambda: datetime.now(timezone.utc), nullable=False)
 
-    # Relationships
     user = relationship("User", back_populates="reading_stats")
     book = relationship("Book", back_populates="reading_stats")
 

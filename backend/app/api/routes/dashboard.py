@@ -1,7 +1,3 @@
-"""
-Dashboard routes — analytics and overview endpoints.
-"""
-
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 
@@ -19,5 +15,4 @@ def dashboard(
     db: Session = Depends(get_db),
     current_admin: User = Depends(get_current_admin),
 ):
-    """Get dashboard analytics (Admin only)."""
     return get_dashboard(db)

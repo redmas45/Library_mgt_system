@@ -1,13 +1,7 @@
-"""
-Pydantic schemas for Book-related request/response validation.
-"""
-
 from pydantic import BaseModel, Field
 from typing import Optional, List
 from datetime import datetime
 
-
-# --- Request Schemas ---
 
 class BookCreate(BaseModel):
     title: str = Field(..., min_length=1, max_length=500)
@@ -25,14 +19,11 @@ class BookUpdate(BaseModel):
     total_copies: Optional[int] = Field(None, ge=1)
 
 
-# --- Response Schemas ---
-
 class BookCopyResponse(BaseModel):
     id: int
     copy_number: int
     status: str
     condition_notes: Optional[str]
-
     model_config = {"from_attributes": True}
 
 
@@ -48,12 +39,10 @@ class BookResponse(BaseModel):
     available_copies: int
     ingestion_status: str
     created_at: datetime
-
     model_config = {"from_attributes": True}
 
 
 class BookDetailResponse(BookResponse):
-    """Extended response with copies list."""
     copies: List[BookCopyResponse] = []
     summary_cache: Optional[str] = None
 
@@ -64,8 +53,6 @@ class BookListResponse(BaseModel):
     page: int
     per_page: int
 
-
-# --- Upload Response ---
 
 class BookUploadResponse(BaseModel):
     message: str

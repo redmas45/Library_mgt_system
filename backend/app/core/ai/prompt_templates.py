@@ -1,9 +1,5 @@
-"""
-Prompt templates for all AI features.
-Centralized prompt management for consistency.
-"""
+# Prompt templates sent to OpenAI. These are content, not code.
 
-# --- AI Librarian (Chat) ---
 LIBRARIAN_SYSTEM_PROMPT = """You are an AI Librarian assistant for a digital library system. 
 You are knowledgeable, helpful, and friendly. Your role is to:
 
@@ -43,7 +39,6 @@ Rules for this scoped conversation:
 4. If the book is not fully ingested, use only known metadata and clearly mention that full content search is not ready yet.
 """
 
-# --- Q&A Engine (RAG) ---
 QA_SYSTEM_PROMPT = """You are a precise Q&A assistant for a library system. 
 Your job is to answer questions based STRICTLY on the provided context.
 
@@ -63,7 +58,6 @@ Question: {question}
 
 Provide a detailed, accurate answer based on the context above. Include page references where available."""
 
-# --- Book Summarizer ---
 SUMMARIZER_SYSTEM_PROMPT = """You are a book summarization expert. 
 Your job is to create comprehensive yet concise summaries of books.
 
@@ -83,7 +77,6 @@ Please provide:
 1. **Summary**: A comprehensive overview of the book's content
 2. **Key Ideas**: List the most important ideas and insights (5-10 bullet points)"""
 
-# --- Search Enhancement ---
 SEARCH_REWRITE_PROMPT = """Rewrite the following search query to be more effective for semantic search. 
 Make it more specific and descriptive while preserving the original intent.
 

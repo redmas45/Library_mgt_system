@@ -1,7 +1,3 @@
-"""
-Q&A Engine — RAG-based question answering scoped to a specific book.
-"""
-
 from typing import Dict, List, Optional
 from app.core.ai.openai_llm import OpenAILLM
 from app.core.ai.prompt_templates import QA_SYSTEM_PROMPT, QA_CONTEXT_PROMPT
@@ -10,37 +6,13 @@ from app.utils.logger import logger
 
 
 class QAEngine:
-    """RAG-based Q&A engine for book-specific questions."""
 
     def __init__(self, llm: OpenAILLM, vector_store: VectorStore):
         self.llm = llm
         self.vector_store = vector_store
 
-    def answer(
-        self,
-        question: str,
-        book_id: int,
-        book_title: str,
-        top_k: int = 5,
-    ) -> Dict:
-        """
-        Answer a question about a specific book using RAG.
-
-        Args:
-            question: The user's question
-            book_id: Book to query against
-            book_title: Title for prompt context
-            top_k: Number of chunks to retrieve
-
-        Returns:
-            Dict with "answer", "sources", "tokens_used"
-        """
-        # Retrieve relevant chunks for this book
-        search_results = self.vector_store.search(
-            query=question,
-            top_k=top_k,
-            book_id=book_id,
-        )
+    def answer(self, question: str, book_id: int, book_title: str, top_k: int = 5) -> Dict:
+        search_results = self.vector_store.search(query=question, top_k=top_k, book_id=book_id)
 
         if not search_results:
             return {
@@ -50,7 +22,6 @@ class QAEngine:
                 "tokens_used": None,
             }
 
-        # Build context
         context_parts = []
         sources = []
         for result in search_results:
@@ -63,30 +34,22 @@ class QAEngine:
             })
 
         context_str = "\n\n---\n\n".join(context_parts)
-
-        # Build prompt
         user_prompt = QA_CONTEXT_PROMPT.format(
-            book_title=book_title,
-            context=context_str,
-            question=question,
+            book_title=book_title, context=context_str, question=question,
         )
 
-        # Get LLM answer
         try:
             result = self.llm.generate(
-                system_prompt=QA_SYSTEM_PROMPT,
-                user_prompt=user_prompt,
-                temperature=0.3,  # Lower temperature for factual answers
-                max_tokens=1024,
+                system_prompt=QA_SYSTEM_PROMPT, user_prompt=user_prompt,
+                temperature=0.3, max_tokens=1024,
             )
-
             return {
                 "answer": result["content"],
                 "sources": sources,
                 "tokens_used": result.get("tokens_used"),
             }
         except Exception as e:
-            logger.error(f"❌ QA Engine error: {e}")
+            logger.error(f"QA Engine error: {e}")
             return {
                 "answer": "I encountered an error while processing your question. Please try again.",
                 "sources": [],

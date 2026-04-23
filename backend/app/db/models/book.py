@@ -1,7 +1,3 @@
-"""
-Book model — stores book metadata and inventory counts.
-"""
-
 from sqlalchemy import Column, Integer, String, Text, Enum as SAEnum
 from sqlalchemy.orm import relationship
 from app.db.models.base import Base, TimestampMixin
@@ -33,9 +29,8 @@ class Book(Base, TimestampMixin):
         default="pending",
         nullable=False,
     )
-    summary_cache = Column(Text, nullable=True)  # Cached AI-generated summary
+    summary_cache = Column(Text, nullable=True)
 
-    # Relationships
     copies = relationship("BookCopy", back_populates="book", cascade="all, delete-orphan")
     reading_stats = relationship("ReadingStats", back_populates="book")
 

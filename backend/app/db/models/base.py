@@ -1,20 +1,13 @@
-"""
-Base model with shared timestamp mixin for all database models.
-"""
-
 from datetime import datetime, timezone
 from sqlalchemy import Column, DateTime
 from sqlalchemy.orm import DeclarativeBase
 
 
 class Base(DeclarativeBase):
-    """Base class for all SQLAlchemy models."""
     pass
 
 
 class TimestampMixin:
-    """Mixin that adds created_at and updated_at timestamps to models."""
-
     created_at = Column(
         DateTime,
         default=lambda: datetime.now(timezone.utc),

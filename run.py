@@ -7,8 +7,16 @@ Run:  python run.py
 import os
 import sys
 import subprocess
+import time
+import argparse
+import socket
+import io
 import shutil
 from pathlib import Path
+
+# Force UTF-8 encoding for stdout on Windows
+sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8', line_buffering=True)
+sys.stderr = io.TextIOWrapper(sys.stderr.buffer, encoding='utf-8', line_buffering=True)
 
 # ─── Paths ───────────────────────────────────────────────
 ROOT_DIR = Path(__file__).resolve().parent

@@ -1,7 +1,3 @@
-"""
-AI Chat routes — conversational AI librarian endpoint.
-"""
-
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 
@@ -21,7 +17,6 @@ def chat_with_librarian(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    """Chat with the AI Librarian. Supports conversation sessions."""
     ai_service = AIService(llm=get_llm(), vector_store=get_vector_store())
     return ai_service.chat(
         db=db,

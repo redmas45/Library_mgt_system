@@ -1,7 +1,3 @@
-"""
-User model — stores registered users with roles.
-"""
-
 from sqlalchemy import Column, Integer, String, Enum as SAEnum
 from sqlalchemy.orm import relationship
 from app.db.models.base import Base, TimestampMixin
@@ -24,7 +20,6 @@ class User(Base, TimestampMixin):
     role = Column(SAEnum(UserRole), default=UserRole.USER, nullable=False)
     is_active = Column(Integer, default=1, nullable=False)  # SQLite boolean
 
-    # Relationships
     borrow_records = relationship("BorrowRecord", back_populates="user")
     interactions = relationship("Interaction", back_populates="user")
     reading_stats = relationship("ReadingStats", back_populates="user")

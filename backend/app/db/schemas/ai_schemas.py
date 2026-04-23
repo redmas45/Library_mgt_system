@@ -1,13 +1,7 @@
-"""
-Pydantic schemas for AI-related request/response validation.
-"""
-
 from pydantic import BaseModel, Field
 from typing import Optional, List
 from datetime import datetime
 
-
-# --- Chat Schemas ---
 
 class ChatMessage(BaseModel):
     role: str = Field(..., pattern="^(user|assistant|system)$")
@@ -16,8 +10,8 @@ class ChatMessage(BaseModel):
 
 class ChatRequest(BaseModel):
     message: str = Field(..., min_length=1, max_length=2000)
-    session_id: Optional[str] = None  # For conversation continuity
-    book_id: Optional[int] = None  # If scoped to a specific book
+    session_id: Optional[str] = None
+    book_id: Optional[int] = None
 
 
 class ChatResponse(BaseModel):
@@ -27,12 +21,10 @@ class ChatResponse(BaseModel):
     tokens_used: Optional[int] = None
 
 
-# --- Search Schemas ---
-
 class SearchRequest(BaseModel):
     query: str = Field(..., min_length=1, max_length=500)
     top_k: int = Field(5, ge=1, le=20)
-    book_id: Optional[int] = None  # Filter by specific book
+    book_id: Optional[int] = None
 
 
 class SearchResult(BaseModel):
@@ -48,8 +40,6 @@ class SearchResponse(BaseModel):
     results: List[SearchResult]
     total_results: int
 
-
-# --- Q&A Schemas ---
 
 class QARequest(BaseModel):
     question: str = Field(..., min_length=1, max_length=1000)
@@ -69,8 +59,6 @@ class QAResponse(BaseModel):
     book_title: str
     tokens_used: Optional[int] = None
 
-
-# --- Summary Schemas ---
 
 class SummaryRequest(BaseModel):
     book_id: int = Field(..., description="ID of the book to summarize")

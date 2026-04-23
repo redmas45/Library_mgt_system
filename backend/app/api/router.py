@@ -1,7 +1,3 @@
-"""
-API router — aggregates all route modules.
-"""
-
 from fastapi import APIRouter
 
 from app.api.routes.auth import router as auth_router

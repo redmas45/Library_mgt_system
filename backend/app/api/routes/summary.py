@@ -1,7 +1,3 @@
-"""
-Summary routes — book summarization and Q&A endpoints.
-"""
-
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 
@@ -26,7 +22,6 @@ def get_book_summary(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    """Generate or retrieve a summary of a book."""
     ai_service = AIService(llm=get_llm(), vector_store=get_vector_store())
     return ai_service.summarize_book(
         db=db,
@@ -42,7 +37,6 @@ def ask_question(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    """Ask a question about a specific book. Uses RAG for grounded answers."""
     ai_service = AIService(llm=get_llm(), vector_store=get_vector_store())
     return ai_service.ask_question(
         db=db,
